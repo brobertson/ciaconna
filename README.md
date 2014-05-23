@@ -1,11 +1,11 @@
-ciaconna
-========
+# ciaconna
 
 Polytonic Greek OCR tool suite based on Rigaudon and Ocropus 0.7
 
-Instructions:
+## Instructions:
 1. Download and install [Ocropus 0.7](https://code.google.com/p/ocropus/)
-2. Process images using appropriate supplied classifier.
+2. Run 'bin/ocropus_page.sh -l classifier_file -o output.html image.png' to process a single page.
+3. Run 'bin/ocropus_batch.sh [file.pdf or file.zip] classifier_file' to process an entire volume.
 
 License
 -------
