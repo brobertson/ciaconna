@@ -76,16 +76,34 @@ if [ -z  $output_filename ]; then
   usage
 fi
 
+#Check that ocropus commands are accessible
+if $verbose; then
+  echo "Checking that the following ocropus scripts exist ..."
+fi
+for cmd in "ocropus-nlbin" "ocropus-gpageseg" "ocropus-rpred" "ocropus-hocr"; do
+  if hash "$cmd" 2>/dev/null; then 
+    if $verbose ; then 
+        printf "%-10s" "$cmd"
+        printf " OK\n" 
+    fi
+  else 
+    printf "%-10s" "$cmd"
+    printf "missing. Please install.\n"
+    exit 1 
+  fi
+done
+
 #Get stripped names to use in naming output, etc.
 fbname=`basename "$1"`
 if $verbose ; then
-  echo $fbname
+  echo
+  echo "File basename: $fbname"
 fi
 
 barefilename=${fbname%.*}
 extension="${fbname##*.}"
 if $verbose ; then
-  echo $barefilename
+  echo "Bare filename: $barefilename"
 fi
 
 #make a temporary directory for processing
@@ -106,11 +124,30 @@ if [[ -z "$fbname" ]]; then
 fi
 #Perform each step in the processing.
 #PG likes a 0.7 threshold, slightly darker than standard 0.5
+if $verbose ; then
+  echo
+  echo "Output from ocropus-nlbin:"
+fi
 eval ocropus-nlbin $process_file -t 0.7 -o $process_dir $delete_string
-eval ocropus-gpageseg -b --maxseps 1 $columns_command  $process_dir'/????.bin.png' 
+
+if $verbose ; then
+  echo 
+  echo "Output from ocropus-gpageseg:"
+fi
+eval ocropus-gpageseg  $columns_command  $process_dir'/????.bin.png' $delete_string 
 process_dir_for_classifier=`mktemp -d`
 cp -a $process_dir/* $process_dir_for_classifier
+
+if $verbose ; then
+  echo
+  echo "Output from ocropus-rpred:"
+fi
 eval ocropus-rpred   $model_command $process_dir_for_classifier'/????/??????.bin.png' $delete_string
+
+if $verbose ; then
+  echo
+  echo "Output from ocropus-hocr:"
+fi
 eval ocropus-hocr $process_dir_for_classifier'/????.bin.png' -o $output_filename $delete_string
 rm -rf $process_dir_for_classifier > /dev/null
 rm -rf $process_dir > /dev/null
