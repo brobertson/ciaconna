@@ -11,8 +11,9 @@ delete_string=" &> /dev/null "
 verbose=false
 image_is_preprocessed=""
 columns_command=""
+binarization_threshold=""
 #Get the args
-while getopts ":l:o:C:c:vp" opt; do
+while getopts ":l:o:C:c:t:vp" opt; do
   case $opt in
     v)
       delete_string=""
@@ -25,7 +26,10 @@ while getopts ":l:o:C:c:vp" opt; do
       output_filename=$OPTARG
     ;;
     c)
-      columns_command="--maxcolseps $OPTARG"
+      columns_command="$OPTARG"
+    ;;
+    t)
+      binarization_threshold="-t $OPTARG"
     ;;
     l)
       classifier=$OPTARG
@@ -128,7 +132,7 @@ if $verbose ; then
   echo
   echo "Output from ocropus-nlbin:"
 fi
-eval ocropus-nlbin $process_file -t 0.7 -o $process_dir $delete_string
+eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string
 
 if $verbose ; then
   echo 

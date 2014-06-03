@@ -111,7 +111,7 @@ do
   fileext=${image_file##*.}
   if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
     echo "processing $image_file into $filebase.html"
-    $CIACONNA_HOME/bin/ocropus_page.sh -v -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 2>&1
+    $CIACONNA_HOME/bin/ocropus_page.sh -t 0.7 -v -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 2>&1
   fi
   if [ ! -f $SMALL_IMAGE_DIR/$file_base.jpg ]; then
     echo "creating $file_base.jpg"
@@ -121,17 +121,19 @@ done
 echo "Classifier file base: $classifier_file_base"
 archive_name_base="robertson_${DATE}_${base}_${classifier_file_base}_full"
 
-zip -r $archive_name_base.zip $HOCR_OUTPUT_DIR/
+cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ./
+zip -r $archive_name_base.zip $HOCR_OUTPUT_DIR/ *.xml
 cd $HOCR_OUTPUT_DIR/..
 cp $HOCR_OUTPUT_DIR/* $SELECTED_DIR
-tar -czf $archive_name_base.tar.gz $INNER_HOCR_OUTPUT_DIR $INNER_SELECTED_DIR
+tar -czf $archive_name_base.tar.gz $INNER_HOCR_OUTPUT_DIR $INNER_SELECTED_DIR *.xml
+rm *.xml
 cd -
 cd $OCR_OUTPUT_DIR/Zips
 ln -s $IMAGE_DIR/$archive_name_base.zip
 cd $OCR_OUTPUT_DIR/Tars
 ln -s $IMAGE_DIR/$archive_name_base.tar.gz
 cd $OCR_OUTPUT_DIR/Jpgs
-if [ ! -d $SMALL_IMAGE_DIR ]; then
+#if [ ! -d $SMALL_IMAGE_DIR ]; then
   ln -s $SMALL_IMAGE_DIR
-fi
+#fi
 
