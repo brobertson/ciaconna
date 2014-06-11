@@ -11,9 +11,9 @@ delete_string=" &> /dev/null "
 verbose=false
 image_is_preprocessed=""
 columns_command=""
-binarization_threshold=""
+binarization_threshold=" -t 0.7"
 #Get the args
-while getopts ":l:o:C:c:t:vp" opt; do
+while getopts "e::l:o:C:c:t:vp" opt; do
   case $opt in
     v)
       delete_string=""
@@ -53,6 +53,9 @@ while getopts ":l:o:C:c:t:vp" opt; do
         echo using comparand $compare_file
       fi
     ;;
+    e)
+      file_preprocess_command=$OPTARG
+    ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       usage
@@ -85,15 +88,15 @@ if $verbose; then
   echo "Checking that the following ocropus scripts exist ..."
 fi
 for cmd in "ocropus-nlbin" "ocropus-gpageseg" "ocropus-rpred" "ocropus-hocr"; do
-  if hash "$cmd" 2>/dev/null; then 
-    if $verbose ; then 
-        printf "%-10s" "$cmd"
-        printf " OK\n" 
+  if hash "$cmd" 2>/dev/null; then
+    if $verbose ; then
+      printf "%-10s" "$cmd"
+      printf " OK\n"
     fi
-  else 
+  else
     printf "%-10s" "$cmd"
     printf "missing. Please install.\n"
-    exit 1 
+    exit 1
   fi
 done
 
@@ -134,11 +137,17 @@ if $verbose ; then
 fi
 eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string
 
+if [ ! -x $file_preprocess_command ]; then
+  eval $file_preprocess_command $process_dir/*.bin.png
+else
+  echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
+fi
+
 if $verbose ; then
-  echo 
+  echo
   echo "Output from ocropus-gpageseg:"
 fi
-eval ocropus-gpageseg  $columns_command  $process_dir'/????.bin.png' $delete_string 
+eval ocropus-gpageseg  $columns_command  $process_dir'/????.bin.png' $delete_string
 process_dir_for_classifier=`mktemp -d`
 cp -a $process_dir/* $process_dir_for_classifier
 

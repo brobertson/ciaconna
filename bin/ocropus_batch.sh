@@ -1,20 +1,45 @@
 #!/bin/bash
 export PYTHONIOENCODING=UTF-8
 # We expect two args: the collection_dir and the classifier_dir
-USAGE_MESSAGE="Usage: ocropus_batch [pdf_file,zip file]  classifier_file"
-EXPECTED_ARGS_MIN=2
-EXPECTED_ARGS_MAX=2
+USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default 0.7) -a [pdf_file,zip file] -l classifier_file"
 E_BADARGS=65
 INPUT_FILE=$1
 CLASSIFIER_FILE=$2
 OCR_OUTPUT_DIR=/work/broberts/Output
 PPI=400
+binarization_threshold="-t 0.7"
+columns_command=""
+while getopts "l:c:t:v:a:d:" opt; do
+  case $opt in
+    v)
+      delete_string=""
+      verbose=true
+    ;;
+    c)
+      columns_command="-c $OPTARG"
+    ;;
+    t)
+      binarization_threshold="-t $OPTARG"
+    ;;
+    l)
+      CLASSIFIER_FILE=$OPTARG
+    ;;
+    a)
+      INPUT_FILE=$OPTARG
+      echo "input file is $INPUT_FILE"
+    ;;
+    d)
+     DATE=$OPTARG
+     echo "using date $DATE"
+    ;;
+  esac
+done
 
 #check that env. variables are set
 [ -z "$CIACONNA_HOME" ] && { echo "Need to set CIACONNA_HOME env. variable"; exit 1; }
 
 if [ ! -d "$OCR_OUTPUT_DIR" ]; then
-  echo "Need to set OCR_OUTPUT_DIR env. variable" 
+  echo "Need to set OCR_OUTPUT_DIR env. variable"
   exit 1
 fi
 
@@ -22,18 +47,14 @@ fi
 FOO=${DATE:=`date +%F-%H-%M`}
 echo "Using Date $DATE"
 
-if [ $# -lt $EXPECTED_ARGS_MIN -o $# -gt $EXPECTED_ARGS_MAX ]
-then
-  echo $USAGE_MESSAGE
-  exit $E_BADARGS
-fi
 if [ ! -f $CLASSIFIER_FILE ]; then
+  
   echo "classifier file $CLASSIFIER_FILE does not exist"
   echo $USAGE_MESSAGE
   exit $E_BADARGS
 fi
 if [ ! -f "$INPUT_FILE" ]; then
-  echo "pdf file $INPUT_FILE does not exist"
+  echo "input file $INPUT_FILE does not exist"
   echo $USAGE_MESSAGE
   exit $E_BADARGS
 fi
@@ -84,12 +105,15 @@ if [ "$ext" == "zip" ]; then
         convert $image_file $filebase.png
       fi
     done
+  else
+    echo "directory $IMAGE_DIR already exists. Not decompressing archive."
   fi
 fi
 classifier_file_base=$(basename $CLASSIFIER_FILE)
 INNER_HOCR_OUTPUT_DIR=${DATE}_${classifier_file_base}_raw_hocr_output
 INNER_SELECTED_DIR=${DATE}_${classifier_file_base}_selected_hocr_output
 HOCR_OUTPUT_DIR=$IMAGE_DIR/$INNER_HOCR_OUTPUT_DIR
+echo "HOCR_OUTPUT_DIR: $HOCR_OUTPUT_DIR"
 SELECTED_DIR=$IMAGE_DIR/$INNER_SELECTED_DIR
 if [ ! -d $HOCR_OUTPUT_DIR ]; then
   echo "making hocr output dir"
@@ -98,6 +122,7 @@ if [ ! -d $HOCR_OUTPUT_DIR ]; then
 fi
 
 SMALL_IMAGE_DIR=$IMAGE_DIR/${base}_color
+echo "SMALL_IMAGE_DIR: $SMALL_IMAGE_DIR"
 if [ ! -d $SMALL_IMAGE_DIR ]; then
   echo "making jpg output dir"
   mkdir $SMALL_IMAGE_DIR
@@ -111,10 +136,12 @@ do
   fileext=${image_file##*.}
   if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
     echo "processing $image_file into $filebase.html"
-    $CIACONNA_HOME/bin/ocropus_page.sh -t 0.7 -v -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 2>&1
+    $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $binarization_threshold -v -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 2>&1
+  else
+    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
   fi
-  if [ ! -f $SMALL_IMAGE_DIR/$file_base.jpg ]; then
-    echo "creating $file_base.jpg"
+  if [ ! -f $SMALL_IMAGE_DIR/$filebase.jpg ]; then
+    echo "creating $filebase.jpg"
     convert $image_file -scale 30% $SMALL_IMAGE_DIR/$filebase.jpg
   fi
 done
@@ -134,6 +161,6 @@ cd $OCR_OUTPUT_DIR/Tars
 ln -s $IMAGE_DIR/$archive_name_base.tar.gz
 cd $OCR_OUTPUT_DIR/Jpgs
 #if [ ! -d $SMALL_IMAGE_DIR ]; then
-  ln -s $SMALL_IMAGE_DIR
+ln -s $SMALL_IMAGE_DIR
 #fi
 
