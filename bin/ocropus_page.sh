@@ -10,7 +10,7 @@ usage(){
 delete_string=" &> /dev/null "
 verbose=false
 image_is_preprocessed=""
-columns_command=""
+columns_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
 binarization_threshold=" -t 0.7"
 #Get the args
 while getopts "e::l:o:C:c:t:vp" opt; do
@@ -26,7 +26,8 @@ while getopts "e::l:o:C:c:t:vp" opt; do
       output_filename=$OPTARG
     ;;
     c)
-      columns_command="$OPTARG"
+      columns_command=$OPTARG
+      echo "columns command at page is $columns_command"
     ;;
     t)
       binarization_threshold="-t $OPTARG"
