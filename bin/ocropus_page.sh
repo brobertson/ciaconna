@@ -56,6 +56,7 @@ while getopts "e::l:o:C:c:t:vp" opt; do
     ;;
     e)
       file_preprocess_command=$OPTARG
+      echo "preproces command is: $file_preprocess_command"
     ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -116,6 +117,7 @@ fi
 
 #make a temporary directory for processing
 process_dir=`mktemp -d --suffix=$barefilename`
+echo "process_dir: $process_dir"
 process_file=$1
 
 #Convert image to png if necessary
@@ -138,8 +140,9 @@ if $verbose ; then
 fi
 eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string
 
-if [ ! -x $file_preprocess_command ]; then
-  eval $file_preprocess_command $process_dir/*.bin.png
+if [[ -x $file_preprocess_command ]]; then
+   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
+   ( $file_preprocess_command  $process_dir/*.bin.png )
 else
   if $verbose ; then 
     echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
@@ -165,6 +168,6 @@ if $verbose ; then
   echo "Output from ocropus-hocr:"
 fi
 eval ocropus-hocr $process_dir_for_classifier'/????.bin.png' -o $output_filename $delete_string
-rm -rf $process_dir_for_classifier > /dev/null
-rm -rf $process_dir > /dev/null
+#rm -rf $process_dir_for_classifier > /dev/null
+#rm -rf $process_dir > /dev/null
 
