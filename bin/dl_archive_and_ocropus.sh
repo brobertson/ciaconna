@@ -1,23 +1,29 @@
 #!/bin/bash
 #download the file
 #Download and preprocess the text images and data if they aren't downloaded yet
-binarization_threshold="-t 0.7"
+#binarization_threshold="-t 0.7"
 columns_command=""
 verbose=false
 ARCHIVE_ID=""
 FILENAME=""
 FILE_TO_PROCESS=""
-while getopts "l:c:t:v:a:f:d:" opt; do
+metadata_command=""
+days=4
+gb_memory=3
+PPI=500
+while getopts "l:c:t:v:a:f:d:m:M:r:" opt; do
   case $opt in
     v)
       delete_string=""
       verbose=true
     ;;
     c)
-      columns_command="-c $OPTARG"
+      columns_command="-c \"$OPTARG\""
+      echo "columns command is: $columns_command"
     ;;
     t)
       binarization_threshold="-t $OPTARG"
+      echo "binarization threshold is: $binarization_threshold"
     ;;
     l)
       CLASSIFIER_FILE=$OPTARG
@@ -34,7 +40,25 @@ while getopts "l:c:t:v:a:f:d:" opt; do
       DATE=$OPTARG
       echo "date is $DATE"
     ;;
-
+    m)
+     metadata_command="-m $OPTARG"
+     echo "metadata file is $OPTARG"
+    ;;
+    M) 
+     gb_memory="$OPTARG"
+     echo "set memory to $gb_memory GB"
+    ;;
+    R)
+      PPI=$OPTARG
+    ;;
+    r)
+     days=$OPTARG
+     echo "duration set to $days days"
+     re='^[0-9]+$'
+     if ! [[ $days =~ $re ]] ; then
+        echo "error: -r must be followed by an integer. $days is not a number." >&2; exit 1
+     fi
+     ;;
   esac
 done
 
@@ -94,4 +118,4 @@ ERROR_FILE=$LOG_DIR/${ARCHIVE_ID}_${DATE}_error.txt
 echo "using log file $LOG_FILE"
 rm -rf $OUTPUT_DIR
 #submit the job
-sqsub --mpp=2G -o $LOG_FILE -e $ERROR_FILE -r 4d -q serial --mail-start --mail-end  /work/broberts/ciaconna/bin/ocropus_batch.sh -a "$FILE_TO_PROCESS" -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command
+sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end  /work/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command -R $PPI

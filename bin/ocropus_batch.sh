@@ -1,22 +1,23 @@
 #!/bin/bash
 export PYTHONIOENCODING=UTF-8
 # We expect two args: the collection_dir and the classifier_dir
-USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default 0.7) -a [pdf_file,zip file] -l classifier_file"
+USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default determined by ocropus defaults, usually 0.5) -a [pdf_file,zip file] -l classifier_file"
 E_BADARGS=65
 INPUT_FILE=$1
 CLASSIFIER_FILE=$2
 OCR_OUTPUT_DIR=/work/broberts/Output
-PPI=400
-binarization_threshold="-t 0.7"
+PPI=500
+binarization_threshold="-t 0.6"
 columns_command=""
-while getopts "l:c:t:v:a:d:" opt; do
+while getopts "l:c:t:v:a:d:m:R:" opt; do
   case $opt in
     v)
       delete_string=""
       verbose=true
     ;;
     c)
-      columns_command="-c $OPTARG"
+      columns_command="$OPTARG"
+      echo "columns_command is $columns_command"
     ;;
     t)
       binarization_threshold="-t $OPTARG"
@@ -32,9 +33,18 @@ while getopts "l:c:t:v:a:d:" opt; do
      DATE=$OPTARG
      echo "using date $DATE"
     ;;
+    m)
+      METADATA_FILE=$OPTARG
+      echo "using metadata file $METADATA_FILE"
+    ;;
+    R)
+     PPI=$OPTARG
+     echo "resolution set to $OPTARG PPI"
+    ;;
   esac
 done
 
+echo "binarization threshold: $binarization_threshold"
 #check that env. variables are set
 [ -z "$CIACONNA_HOME" ] && { echo "Need to set CIACONNA_HOME env. variable"; exit 1; }
 
@@ -66,7 +76,7 @@ base=${base%_*}
 ext=${file##*.}
 
 
-if [ ! "$ext" == "pdf" ] && [ ! "$ext" == "zip"]; then
+if [ ! "$ext" == "pdf" ] && [ ! "$ext" == "zip" ]; then
   echo "pdf file $INPUT_FILE does not have a recognized extension: $ext"
   echo $USAGE_MESSAGE
   exit $E_BADARGS
@@ -80,11 +90,19 @@ IMAGE_DIR=$OCR_OUTPUT_DIR/$base/$base-PNG-$PPI
 
 if [  "$ext" == "pdf" ]; then
   if [ ! -d $IMAGE_DIR ]; then
-    echo "converting pdf to pngs at resolution $PPI..."
+    echo "converting pdf to pngs"
     mkdir $IMAGE_DIR
     cd $IMAGE_DIR
-    pdftoppm -r $PPI  -png $INPUT_FILE $base
-    echo "done converting"
+    /work/broberts/local/bin/pdfimages   -png -p $INPUT_FILE $base
+    #remove inconsequential images
+    find . -size -3500c -delete
+    i=1
+    for f in *.png; do
+       num=$(printf %04d $i)   #zero-pad "$i", if wanted
+       mv "$f" "${base}_$num.png"  #replace the orginal file ending with "$i.pdf"
+       let i++     #increment "$i" for the next file
+    done
+    echo "done converting pdf"
   fi
 fi
 
@@ -136,7 +154,7 @@ do
   fileext=${image_file##*.}
   if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
     echo "processing $image_file into $filebase.html"
-    $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $binarization_threshold -v -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 2>&1
+    $CIACONNA_HOME/bin/ocropus_page.sh -c "$columns_command" $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
   else
     echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
   fi
@@ -149,12 +167,11 @@ echo "Classifier file base: $classifier_file_base"
 archive_name_base="robertson_${DATE}_${base}_${classifier_file_base}_full"
 
 cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ./
+cp "$METADATA_FILE" ./${base}_meta.xml
 zip -r $archive_name_base.zip $HOCR_OUTPUT_DIR/ *.xml
 cd $HOCR_OUTPUT_DIR/..
 cp $HOCR_OUTPUT_DIR/* $SELECTED_DIR
 tar -czf $archive_name_base.tar.gz $INNER_HOCR_OUTPUT_DIR $INNER_SELECTED_DIR *.xml
-rm *.xml
-cd -
 cd $OCR_OUTPUT_DIR/Zips
 ln -s $IMAGE_DIR/$archive_name_base.zip
 cd $OCR_OUTPUT_DIR/Tars

@@ -7,7 +7,7 @@ usage(){
   exit 1
 }
 
-delete_string=" &> /dev/null "
+delete_string=" > /dev/null "
 verbose=false
 image_is_preprocessed=""
 columns_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
@@ -27,7 +27,7 @@ while getopts "e::l:o:C:c:t:vp" opt; do
     ;;
     c)
       columns_command=$OPTARG
-      echo "columns command at page is $columns_command"
+      #echo "columns command at page is $columns_command"
     ;;
     t)
       binarization_threshold="-t $OPTARG"
@@ -141,7 +141,9 @@ eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete
 if [ ! -x $file_preprocess_command ]; then
   eval $file_preprocess_command $process_dir/*.bin.png
 else
-  echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
+  if $verbose ; then 
+    echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
+  fi
 fi
 
 if $verbose ; then
