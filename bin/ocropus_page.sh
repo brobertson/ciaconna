@@ -154,20 +154,19 @@ if $verbose ; then
   echo "Output from ocropus-gpageseg:"
 fi
 eval ocropus-gpageseg  $columns_command  $process_dir'/????.bin.png' $delete_string
-process_dir_for_classifier=`mktemp -d`
-cp -a $process_dir/* $process_dir_for_classifier
+#process_dir_for_classifier=`mktemp -d`
+#cp -a $process_dir/* $process_dir_for_classifier
 
 if $verbose ; then
   echo
   echo "Output from ocropus-rpred:"
 fi
-eval ocropus-rpred   $model_command $process_dir_for_classifier'/????/??????.bin.png' $delete_string
+eval ocropus-rpred   $model_command $process_dir'/????/??????.bin.png' $delete_string
 
 if $verbose ; then
   echo
   echo "Output from ocropus-hocr:"
 fi
-eval ocropus-hocr $process_dir_for_classifier'/????.bin.png' -o $output_filename $delete_string
-#rm -rf $process_dir_for_classifier > /dev/null
-#rm -rf $process_dir > /dev/null
+eval ocropus-hocr $process_dir'/????.bin.png' -o $output_filename $delete_string
+rm -rf $process_dir > /dev/null
 
