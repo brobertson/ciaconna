@@ -10,10 +10,13 @@ usage(){
 delete_string=" > /dev/null "
 verbose=false
 image_is_preprocessed=""
-columns_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
+single_column_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
+columns_command=$single_column_command
+migne_columns_command=" --threshold 0.4  --csminheight 1 --maxcolseps 5 "
 binarization_threshold=" -t 0.7"
+columns_bin="ocropus-gpageseg"
 #Get the args
-while getopts "e::l:o:C:c:t:vp" opt; do
+while getopts "e::l:o:C:c:t:vpm" opt; do
   case $opt in
     v)
       delete_string=""
@@ -21,6 +24,10 @@ while getopts "e::l:o:C:c:t:vp" opt; do
     ;;
     p)
       image_is_preprocessed=true
+    ;;
+    m)
+      columns_command=$migne_columns_command
+      columns_bin="ocropus-gpageseg-migne"
     ;;
     o)
       output_filename=$OPTARG
@@ -117,7 +124,10 @@ fi
 
 #make a temporary directory for processing
 process_dir=`mktemp -d --suffix=$barefilename`
-echo "process_dir: $process_dir"
+if $verbose ; then
+  echo
+  echo "process_dir: $process_dir"
+fi
 process_file=$1
 
 #Convert image to png if necessary
@@ -138,7 +148,7 @@ if $verbose ; then
   echo
   echo "Output from ocropus-nlbin:"
 fi
-eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string
+eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
 
 if [[ -x $file_preprocess_command ]]; then
    echo "performing $file_preprocess_command on $process_dir/*.bin.png"
@@ -151,9 +161,9 @@ fi
 
 if $verbose ; then
   echo
-  echo "Output from ocropus-gpageseg:"
+  echo "Output from $columns_bin:"
 fi
-eval ocropus-gpageseg  $columns_command  $process_dir'/????.bin.png' $delete_string
+eval $columns_bin  $columns_command  $process_dir'/????.bin.png' $delete_string
 #process_dir_for_classifier=`mktemp -d`
 #cp -a $process_dir/* $process_dir_for_classifier
 
@@ -161,12 +171,12 @@ if $verbose ; then
   echo
   echo "Output from ocropus-rpred:"
 fi
-eval ocropus-rpred   $model_command $process_dir'/????/??????.bin.png' $delete_string
+eval ocropus-rpred -p 16  $model_command $process_dir'/????/??????.bin.png' $delete_string
 
 if $verbose ; then
   echo
   echo "Output from ocropus-hocr:"
 fi
 eval ocropus-hocr $process_dir'/????.bin.png' -o $output_filename $delete_string
-rm -rf $process_dir > /dev/null
+#rm -rf $process_dir > /dev/null
 
