@@ -8,7 +8,7 @@ ARCHIVE_ID=""
 FILENAME=""
 FILE_TO_PROCESS=""
 metadata_command=""
-days=4
+days=7
 gb_memory=3
 PPI=500
 while getopts "l:c:t:v:a:f:d:m:M:r:" opt; do
@@ -118,4 +118,4 @@ ERROR_FILE=$LOG_DIR/${ARCHIVE_ID}_${DATE}_error.txt
 echo "using log file $LOG_FILE"
 rm -rf $OUTPUT_DIR
 #submit the job
-sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end  /work/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command -R $PPI
+sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end  /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command -R $PPI
