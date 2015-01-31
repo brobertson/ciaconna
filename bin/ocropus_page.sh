@@ -26,11 +26,13 @@ while getopts "e::l:o:C:c:t:vpm" opt; do
       image_is_preprocessed=true
     ;;
     m)
+      echo "using Migne-mode"
       columns_command=$migne_columns_command
       columns_bin="ocropus-gpageseg-migne"
     ;;
     o)
       output_filename=$OPTARG
+      echo "I have set output_filename to $output_filename"
     ;;
     c)
       columns_command=$OPTARG
@@ -87,15 +89,20 @@ if $verbose ; then
   echo "outputfile $output_filename"
 fi
 
-if [ -z  $output_filename ]; then
+#This formulation is apparently best way to check
+#for set variable: http://stackoverflow.com/questions/3601515/how-to-check-if-a-variable-is-set-in-bash
+if [ -z ${output_filename+x} ]; then
   echo "Output file $output_filename not set"
   usage
 fi
 
+output_filename_without_ex=${output_filename%.*}
+migne_csv=$output_filename_without_ex.csv
+migne_image=${output_filename_without_ex}_dr.png
 #Check that ocropus commands are accessible
 if $verbose; then
   echo "Checking that the following ocropus scripts exist ..."
-fi
+
 for cmd in "ocropus-nlbin" "ocropus-gpageseg" "ocropus-rpred" "ocropus-hocr"; do
   if hash "$cmd" 2>/dev/null; then
     if $verbose ; then
@@ -108,6 +115,7 @@ for cmd in "ocropus-nlbin" "ocropus-gpageseg" "ocropus-rpred" "ocropus-hocr"; do
     exit 1
   fi
 done
+fi
 
 #Get stripped names to use in naming output, etc.
 fbname=`basename "$1"`
@@ -150,14 +158,33 @@ if $verbose ; then
 fi
 eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
 
-if [[ -x $file_preprocess_command ]]; then
-   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
-   ( $file_preprocess_command  $process_dir/*.bin.png )
-else
-  if $verbose ; then 
-    echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
-  fi
+#if [[ -x $file_preprocess_command ]]; then
+#   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
+#   ( $file_preprocess_command  $process_dir/*.bin.png )
+#else
+#  if $verbose ; then 
+#    echo "file preprocess command $file_preprocess_command either is not a file or is not executable. Skipping ..."
+#  fi
+#fi
+
+
+if [[ $columns_bin = "ocropus-gpageseg-migne" ]]; then
+DALITZ_HOME=$CIACONNA_HOME/Migne
+DALITZ_OUTPUT_DIR=$(mktemp -d)
+input_file=$process_dir/*.bin.png
+echo "Dalitz preprocess Output dir: $DALITZ_OUTPUT_DIR"
+python $DALITZ_HOME/remove_title_3.1.py   -tf $DALITZ_HOME/midletters.xml -od $DALITZ_OUTPUT_DIR $input_file
+#dir=$(dirname $file)
+name=$(basename $input_file)
+name_without_extension=${name%.*}
+
+#overwrite the input file for further OCR processing
+cp $DALITZ_OUTPUT_DIR/${name_without_extension}_rt_result.png $input_file
+#also copy to html output dir
+#cp $DALITZ_OUTPUT_DIR/${name_without_extension}_rt_result.png $migne_image
+cp $DALITZ_OUTPUT_DIR/${name_without_extension}*csv  $migne_csv
 fi
+#end migne-specific block
 
 if $verbose ; then
   echo
