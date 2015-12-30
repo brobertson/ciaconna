@@ -47,7 +47,7 @@ def get_hocr_words(treeIn, word_count):
     words = treeIn.xpath("//html:span[@class='ocr_word'] | //span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
     #word_count = {}
     for word in words:
-        dhf = word.get('dehyphenatedForm')
+        dhf = word.get('data-dehyphenatedform')
         if dhf == '':
             next
         elif dhf != None:
@@ -56,17 +56,28 @@ def get_hocr_words(treeIn, word_count):
         elif word.text[-1] != "-":#ommit blown hyphenated forms
             add_word(word_count, word.text)
             #print "apending word", word.text
+def make_ligatures(word):
+	for pair in [[u'ae',u'æ'],[u'ff',u'ﬀ'],[u'oe',u'œ'],[u'fl',u'ﬂ'],[u'fi',u'ﬁ']]:
+		word = word.replace(pair[0],pair[1])
+	return word
 
-def makeDict(fileName):
+
+def makeDict(fileName, migne_mode=False):
     import greek_tools
     words = []
     mine = codecs.open(fileName, 'r', 'utf-8')
     for line in mine:
         line = unicodedata.normalize('NFC', line)
-        (word, freq) = line.split(',')
+        try:
+            (word, freq) = line.split(',')
+        except ValueError:
+            print "this line is wrong:", line
+            sys.exit()
         freq = int(freq.rstrip('\r\n'))
         if freq > 4:
             word_prep = preprocess_word(word.rstrip('\n\r\x11'))
+            if migne_mode:
+                word_prep = make_ligatures(word_prep)
             words.append(word_prep)
 ##    for word in words:
 ##        print word
@@ -204,7 +215,8 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἶ',[u'ἷ']],
             [u'T',[u'Υ']],
             [u'l',[u'I',u'ί',u'ἰ',u'ἱ',u'Ἰ',u'ἴ',u'i',u'ι']],
-            [u'A',[u'Α',u'Λ']],
+            [u'A',[u'Α',u'Ἀ',u'Ἁ',u'Λ']],
+            [u'3',[u'Β',u'B']],
             [u'7',[u'Τ',u'ί',u'Γ',u'T']],
             [u'Ε',[u'E']],
             [u'Α',[u'Ἀ',u'Δ']],
@@ -217,13 +229,19 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἅ',[u'ἄ',u'ἂ']],
             [u'ἄ',[u'θ']],
             [u'ὰ',[u'ἄ',u'ἂ',u't']],
+            [u'ά',[u'ἀ',u'ἄ']],
+            [u'ᾶ',[u'ᾷ']],
             [u'ἔ',[u'ἕ']],
             [u'ε',[u'ὲ',u'ἐ',u'e',u's']],
+            [u'ἐ',[u'ἑ']],
+            [u'ἑ',[u'ἐ']],
             [u'έ',[u'ἐ']],
             [u'ἱ',[u'ἰ']],
             [u'ἰ',[u'ἱ']],
             [u'ὶ',[u'ἱ',u'i']],
             [u'ι',[u'ἰ',u'ἱ',u'ὶ',u'ί',u'i']],
+            [u'ἠ',[u'ἡ']],
+            [u'ἡ',[u'ἠ']],
             [u'ῆ',[u'ὴ',u'ἧ']],
             [u'θ',[u'ﬁ']],
             [u'δ',[u'θ']],
@@ -245,6 +263,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἤ',[u'ἥ']],
             [u'ῃ',[u'η']],
             [u'ὕ',[u'ὔ']],
+            [u'ὔ',[u'ὕ']],
             [u'ς',[u's']],
             [u'σ',[u'κ']],
             [u'τ',[u'r',u'x']],
@@ -257,16 +276,18 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'D',[u'Π',u'Β',u'Ο',u'U']],
             [u'B',[u'Β']],
             [u'E',[u'Ε',u'F']],
-            [u'Ε',[u'E']],
+            [u'Ε',[u'E',u'Ἐ',u'Ἑ']],
             [u'Ἐ',[u'Ἑ']],
             [u'B',['H']],
-            [u'H',[u'Π',u'Η']],
-            [u'I',[u'Ι',u'l']],
+            [u'H',[u'Π',u'Η',u'Ἡ',u'Ἡ']],
+            [u'I',[u'Ι',u'l',u'Π']],
             [u'J',[u'I']],
             [u'M',[u'Μ']],
             [u'N',[u'Ν']],
-            [u'O',[u'Ο']],
+            [u'O',[u'Ο',u'0']],
+            [u'0',[u'O',u'Ο']],
             [u'P',[u'Ῥ',u'Ρ']],
+            [u'Ρ',[u'Ῥ',]],
             [u'R',[u'H']],
             [u'Q',[u'O']],
             [u'T',[u'Τ',u'Γ']],
@@ -302,7 +323,8 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'τ',[u'ι']],
              [u's',[u'a',u'n',u'e']],
             [u'1',[u'ί']],
-            [u'1',[u'l',u'i',u'I']]
+            [u'1',[u'l',u'i',u'I']],
+            [u'8',[u's']]
             ]
         for subst in subs:
             for replacement in subst[1]:
