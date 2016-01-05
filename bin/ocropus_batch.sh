@@ -9,12 +9,19 @@
 	PPI=500
 	binarization_threshold="-t 0.6"
 	columns_command=""
-	while getopts "l:c:t:v:a:d:m:R:" opt; do
+        migne_command=""
+        verbose=false
+        do_scantailor=false
+	while getopts "l:c:t:v:a:d:m:R:s:ni" opt; do
 	  case $opt in
 	    v)
 	      delete_string=""
 	      verbose=true
 	    ;;
+            i)
+             migne_command=" -m "
+             echo "using migne mode"
+            ;;
 	    c)
 	      columns_command="$OPTARG"
 	      echo "columns_command is $columns_command"
@@ -41,6 +48,14 @@
 	     PPI=$OPTARG
 	     echo "resolution set to $OPTARG PPI"
 	    ;;
+            s)
+             DICTIONARY_FILE=$OPTARG
+             echo "dictionary set to $DICTIONARY_FILE"
+            ;;
+            n)
+             do_scantailor=true
+             echo "Doing scantailor..."
+            ;;
 	  esac
 	done
 
@@ -68,7 +83,11 @@
 	  echo $USAGE_MESSAGE
 	  exit $E_BADARGS
 	fi
-
+        if [ ! -f "$DICTIONARY_FILE" ]; then
+          echo "dictionary file $DICTIONARY_FILE does not exist"
+          echo $USAGE_MESSAGE
+          exit $E_BADARGS
+        fi
 	file=${INPUT_FILE##*/}
 	echo "file $file"
 	base=${file%.*}
@@ -130,49 +149,80 @@
 	classifier_file_base=$(basename $CLASSIFIER_FILE)
 	INNER_HOCR_OUTPUT_DIR=${DATE}_${classifier_file_base}_raw_hocr_output
 	INNER_SELECTED_DIR=${DATE}_${classifier_file_base}_selected_hocr_output
+        INNER_DEHYPHENATED_DIR=${DATE}_${classifier_file_base}_dehyphenated_output
+        INNER_SPELLCHECKED_DIR=${DATE}_${classifier_file_base}_spellchecked_output
 	HOCR_OUTPUT_DIR=$IMAGE_DIR/$INNER_HOCR_OUTPUT_DIR
-	echo "HOCR_OUTPUT_DIR: $HOCR_OUTPUT_DIR"
+        HOCR_DEHYPHENATED_DIR=$IMAGE_DIR/$INNER_DEHYPHENATED_DIR
+        HOCR_SPELLCHECKED_DIR=$IMAGE_DIR/$INNER_SPELLCHECKED_DIR
+	SPELLCHECK_CSV=$HOCR_SPELLCHECKED_DIR/spellcheck.csv
+        echo "HOCR_OUTPUT_DIR: $HOCR_OUTPUT_DIR"
 	SELECTED_DIR=$IMAGE_DIR/$INNER_SELECTED_DIR
 	if [ ! -d $HOCR_OUTPUT_DIR ]; then
 	  echo "making hocr output dir"
 	  mkdir $HOCR_OUTPUT_DIR
 	  mkdir $SELECTED_DIR
+          mkdir $HOCR_DEHYPHENATED_DIR
+          mkdir $HOCR_SPELLCHECKED_DIR
 	fi
 
 	SMALL_IMAGE_DIR=$IMAGE_DIR/${base}_color
+        SCANTAILOR_DIR=$IMAGE_DIR/${base}_st
 	echo "SMALL_IMAGE_DIR: $SMALL_IMAGE_DIR"
 	if [ ! -d $SMALL_IMAGE_DIR ]; then
 	  echo "making jpg output dir"
 	  mkdir $SMALL_IMAGE_DIR
 	fi
-
-	cd "$IMAGE_DIR"
+        if [ ! -d $SCANTAILOR_DIR ]; then
+           echo "making st dir"
+           mkdir $SCANTAILOR_DIR
+        fi
+        if $do_scantailor ; then
+           cd "$IMAGE_DIR"
+           echo "doing scantailor"
+           #echo scantailor-cli --content-detection *.png $SCANTAILOR_DIR
+           eval scantailor-cli --content-detection -l 1 *.png $SCANTAILOR_DIR
+           mogrify  -format png $SCANTAILOR_DIR/*.tif 
+           #clobber the files here, originals, with scantailor's output
+           #cp $SCANTAILOR_DIR/*png ./ 
+           cd "$SCANTAILOR_DIR"
+        else
+	   cd "$IMAGE_DIR"
+        fi
 	echo "processing image files"
-	for image_file in $(ls *.png)
-	do
+	for image_file in $(ls *.png); do
 	  filebase=${image_file%.*}
 	  fileext=${image_file##*.}
 	  if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
 	    echo "processing $image_file into $filebase.html"
-	    echo "hello there output file is: $HOCR_OUTPUT_DIR/$filebase.html"
-	    echo "eval $CIACONNA_HOME/bin/ocropus_page.sh -v -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file"
-	    eval $CIACONNA_HOME/bin/ocropus_page.sh  -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
+	    #echo "hello there output file is: $HOCR_OUTPUT_DIR/$filebase.html"
+	    #echo "eval $CIACONNA_HOME/bin/ocropus_page.sh  -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file"
+	    eval $CIACONNA_HOME/bin/ocropus_page.sh $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
 	  else
 	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
 	  fi
 	  if [ ! -f $SMALL_IMAGE_DIR/$filebase.jpg ]; then
 	    echo "creating $filebase.jpg"
-	    convert $image_file -scale 30% $SMALL_IMAGE_DIR/$filebase.jpg
+	    convert $IMAGE_DIR/$image_file -scale 30% $SMALL_IMAGE_DIR/$filebase.jpg
 	  fi
 	done
-	echo "Classifier file base: $classifier_file_base"
+	echo "dehyphenating"
+        #now dehyphenate
+        python $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
+        echo "generating spellcheck file"
+        #now create spellchecked forms
+        python $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/broberts/unique_no_accent_list.csv > $SPELLCHECK_CSV
+        echo "creating spellchecked version"
+        python $CIACONNA_HOME/bin/Python/spellcheck_hocr.py $SPELLCHECK_CSV  $HOCR_DEHYPHENATED_DIR $SELECTED_DIR
+
+        echo "Classifier file base: $classifier_file_base"
 	archive_name_base="robertson_${DATE}_${base}_${classifier_file_base}_full"
 
+        cd $HOCR_OUTPUT_DIR/..
 	cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ./
 	cp "$METADATA_FILE" ./${base}_meta.xml
 	zip -r $archive_name_base.zip $HOCR_OUTPUT_DIR/ *.xml
-	cd $HOCR_OUTPUT_DIR/..
-	cp $HOCR_OUTPUT_DIR/* $SELECTED_DIR
+	#cd $HOCR_OUTPUT_DIR/..
+	#cp $HOCR_OUTPUT_DIR/* $SELECTED_DIR
 	tar -czf $archive_name_base.tar.gz $INNER_HOCR_OUTPUT_DIR $INNER_SELECTED_DIR *.xml
 	cd $OCR_OUTPUT_DIR/Zips
 	ln -s $IMAGE_DIR/$archive_name_base.zip

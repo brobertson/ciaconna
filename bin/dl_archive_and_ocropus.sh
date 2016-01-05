@@ -11,7 +11,9 @@ metadata_command=""
 days=7
 gb_memory=3
 PPI=500
-while getopts "l:c:t:v:a:f:d:m:M:r:" opt; do
+migne_command=""
+scantailor_command=""
+while getopts "l:c:t:v:a:f:d:m:M:r:s:in" opt; do
   case $opt in
     v)
       delete_string=""
@@ -43,6 +45,12 @@ while getopts "l:c:t:v:a:f:d:m:M:r:" opt; do
     m)
      metadata_command="-m $OPTARG"
      echo "metadata file is $OPTARG"
+     METADATA_FILE="$OPTARG"
+     if [ ! -f $METADATA_FILE ]; then
+       echo "metadata file $METADATA_FILE does not exist"
+       exit 1
+     fi
+     metadata_command="-m $(readlink -m $METADATA_FILE)"
     ;;
     M) 
      gb_memory="$OPTARG"
@@ -59,8 +67,24 @@ while getopts "l:c:t:v:a:f:d:m:M:r:" opt; do
         echo "error: -r must be followed by an integer. $days is not a number." >&2; exit 1
      fi
      ;;
+    s)
+     DICTIONARY_FILE=$OPTARG
+     if [ ! -f $DICTIONARY_FILE ]; then
+       echo "metadata file $DICTIONARY_FILE does not exist"
+       exit 1
+     fi
+    ;;
+    i)
+     migne_command=" -i "
+     echo "migne command is $migne_command"
+    ;;
+    n)
+     scantailor_command=" -n "
+     echo "scantailor command is $scantailor_command"
+    ;;
   esac
 done
+
 
 if [ ! -f $CLASSIFIER_FILE ]; then
   echo "classifier file $CLASSIFIER_FILE does not exist"
@@ -118,4 +142,4 @@ ERROR_FILE=$LOG_DIR/${ARCHIVE_ID}_${DATE}_error.txt
 echo "using log file $LOG_FILE"
 rm -rf $OUTPUT_DIR
 #submit the job
-sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end  /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command -R $PPI
+sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end --mail-abort  /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command

@@ -32,7 +32,9 @@ while getopts "e::l:o:C:c:t:vpm" opt; do
     ;;
     o)
       output_filename=$OPTARG
+     if  $verbose ; then
       echo "I have set output_filename to $output_filename"
+     fi
     ;;
     c)
       columns_command=$OPTARG
