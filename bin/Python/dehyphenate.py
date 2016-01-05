@@ -2,6 +2,7 @@
 # coding: utf-8
 import lxml
 from lxml import etree
+import lxml.html.html5parser
 import sys
 import re
 import codecs
@@ -26,11 +27,11 @@ def dehyphenate(treeIn):
                             pair_count = pair_count + 1
                             dehyphenated_form = u'' + pair[0].text[:-1] + pair[1].text
                             hyphen_position = str(len(pair[0].text))
-                            pair[0].set('dehyphenatedForm', dehyphenated_form)
-                            pair[0].set('hyphenPosition', hyphen_position)
-                            pair[0].set('hyphenEndPair',str(pair_count))
-                            pair[1].set('dehyphenatedForm', '')
-                            pair[1].set('hyphenStartPair',str(pair_count))
+                            pair[0].set('data-dehyphenatedform', dehyphenated_form)
+                            pair[0].set('data-hyphenposition', hyphen_position)
+                            pair[0].set('data-hyphenendpair',str(pair_count))
+                            pair[1].set('data-dehyphenatedform', '')
+                            pair[1].set('data-hyphenstartpair',str(pair_count))
                         print(etree.tostring(pair[0], method='xml', encoding="utf-8", pretty_print=True))
                         print(etree.tostring(pair[1], encoding="utf-8", pretty_print=True))
 	return treeIn
@@ -39,10 +40,18 @@ def identify(treeIn):
         words = treeIn.xpath("//html:span[@class='ocr_word'] | //span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
         for word in words:
             if word.get('id') == None:
-                word.set('id',str(id(word)))
+                word.set('id','_'+str(id(word)))
         return treeIn
 
-html_parser = HTMLParser.HTMLParser()
+def remove_meta_tags(treeIn):
+	metas = treeIn.xpath("//html:meta",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+        if len(metas) > 0:
+            metas[0].getparent().append(etree.Comment("The following meta tags have been commented out to conform to HTML5 until such time as they have been approved by HTML5"))
+	for meta in metas:
+		string_rep = etree.tostring(meta, pretty_print=True)
+                meta.getparent().append(etree.Comment(string_rep))
+                meta.getparent().remove(meta)
+        return treeIn
 spellcheck_dict = {}
 euro_sign = unicode(u"\N{EURO SIGN}") 
 print sys.argv[1]
@@ -72,10 +81,11 @@ for file_name in dir_in_list:
 		print "checking", fileIn_name, "sending to ", fileOut_name
                 try:
                     treeIn = etree.parse(fileIn)
+                    treeIn = remove_meta_tags(treeIn)
                     treeIn = identify(treeIn)
 		    treeIn = dehyphenate(treeIn)
-		    fileOut.write(etree.tostring(treeIn.getroot(),
-                        encoding="UTF-8",xml_declaration=True))
+		    fileOut.write(etree.tostring(treeIn,
+                        encoding="UTF-8", xml_declaration=True,  doctype="<!DOCTYPE html>",method="html" ))
                     fileOut.close()
                 except(lxml.etree.XMLSyntaxError):
                     pass
