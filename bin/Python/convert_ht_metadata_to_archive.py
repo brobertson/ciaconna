@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import string
 
 def clean_text_id(string_in):
-  return string_in.replace('.', 'PERIOD')
+  return string_in.replace('_','UL').replace('.', 'PERIOD')
 
 #data = json.load(urllib2.urlopen('http://catalog.hathitrust.org/api/volumes/brief/recordnumber/008882185.json'))
 data = json.load(urllib2.urlopen('http://catalog.hathitrust.org/api/volumes/brief/recordnumber/012261788.json'))
