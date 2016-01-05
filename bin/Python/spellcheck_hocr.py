@@ -12,7 +12,7 @@ import os
 import unicodedata
 import HTMLParser
 import yaml
-html_parser = HTMLParser.HTMLParser()
+#html_parser = HTMLParser.HTMLParser()
 spellcheck_dict = {}
 euro_sign = unicode(u"\N{EURO SIGN}")
 dir_in = sys.argv[2]
@@ -47,7 +47,7 @@ for file_name in os.listdir(dir_in):
                 print simplified_name
                 name_parts = simplified_name.split('_')
                 print name_parts
-                simplified_name = name_parts[0] + '_' + name_parts[1] + '.xhtml'
+                simplified_name = name_parts[0] + '_' + name_parts[1] 
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
                 fileIn= codecs.open(fileIn_name,'r','utf-8')
@@ -70,7 +70,8 @@ for file_name in os.listdir(dir_in):
                                                            
                         hocr_word_elements = treeIn.xpath("//html:span[@class='ocr_word'] | //span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
                         for word_element in hocr_word_elements:
-                           dhf = word_element.get('dehyphenatedForm')
+                           dhf = word_element.get('data-dehyphenatedform')
+                           print "dehyph form", dhf
                            hyphenated_form = False
                            if dhf == None:
                               try:
@@ -82,7 +83,11 @@ for file_name in os.listdir(dir_in):
                               # It is the tail of a dehyphenated form
                               continue
                            else:
-                              word = dhf
+                              try:
+                                  word = unicodedata.normalize('NFC',dhf)
+                              except TypeError:
+                                  word = unicodedata.normalize('NFC',unicode(dhf))
+                              print "a hyhpenated word:", word
                               hyphenated_form = True
                            try:
                               print "Word:", word
@@ -101,11 +106,11 @@ for file_name in os.listdir(dir_in):
                               #dump(parts[1])
                               output = parts[0] + parts[1] + parts[2]
                               if hyphenated_form:
-                                 hyphen_position = int(word_element.get('hyphenPosition'))-1
-                                 end_no = word_element.get("hyphenEndPair")
-                                 hyphen_end_element = treeIn.xpath("//html:span[@hyphenStartPair='" + end_no + "'] | //span[@hyphenStartPair='" + end_no + "']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+                                 hyphen_position = int(word_element.get('data-hyphenposition'))-1
+                                 end_no = word_element.get("data-hyphenendpair")
+                                 hyphen_end_element = treeIn.xpath("//html:span[@data-hyphenstartpair='" + end_no + "'] | //span[@data-hyphenstartpair='" + end_no + "']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
                                  #hyphen_end_element = treeIn.get_element_by_id(word_element.get("hyphenEndId"))
-                                 word_element.set('dehyphenatedForm',output)
+                                 word_element.set('data-dehyphenatedform',output)
                                  word_element.text = output[0:hyphen_position] + '-'
                                  if len(hyphen_end_element) == 1:
                                     hyphen_end_element[0].text = output[hyphen_position:]
@@ -128,7 +133,7 @@ for file_name in os.listdir(dir_in):
                                       word_element.set('data-spellcheck-mode',"Numerical")
                               else:
                                       word_element.set('data-spellcheck-mode',"None")
-                        fileOut.write(etree.tostring(treeIn.getroot(), encoding="UTF-8",xml_declaration=True))
+                        fileOut.write(etree.tostring(treeIn, encoding="UTF-8",xml_declaration=True ))
                         fileOut.close()
 		except:
                         print "failed to parse!"
