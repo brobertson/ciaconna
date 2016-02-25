@@ -222,63 +222,76 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'Α',[u'A',u'Ἀ',u'Δ']],
             [u'Ἀ',[u'Ἄ',u'Ἁ']],
             [u'Δ',[u'Ἀ',u'Α']],
-            [u'α',[u'z',u'ο',u'a']],
+            [u'α',[u'z',u'ο',u'a',u'σ']],
             [u'β',[u'ἵ',u'ῆ',u'ἐ',u'θ',u'ψ']],
             [u'ἐ',[u'ἑ',u'ἔ',u'ἔ']],
             [u'ἀ',[u'ἁ',u'ἅ',u'ἂ',u'ἄ']],
+            [u'ἁ',[u'ἀ']],
             [u'ἅ',[u'ἄ',u'ἂ']],
-            [u'ἄ',[u'θ']],
-            [u'ὰ',[u'ἄ',u'ἂ',u't']],
-            [u'ά',[u'ἀ',u'ἄ']],
+            [u'ἄ',[u'θ',u'ἀ']],
+            [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ']],
+            [u'ά',[u'ἀ',u'ἄ',u'ό']],
             [u'ᾶ',[u'ᾷ']],
             [u'ἔ',[u'ἕ']],
             [u'ε',[u'ὲ',u'ἐ',u'e',u's']],
             [u'ἐ',[u'ἑ']],
             [u'ἑ',[u'ἐ']],
             [u'έ',[u'ἐ']],
-            [u'ἱ',[u'ἰ']],
+            [u'ἱ',[u'ἰ',u'ἷ']],
+            [u'ἴ',[u'ἷ']],
             [u'ἰ',[u'ἱ']],
             [u'ὶ',[u'ἱ',u'i']],
             [u'ι',[u'ἰ',u'ἱ',u'ὶ',u'ί',u'i']],
             [u'ἠ',[u'ἡ']],
             [u'ἡ',[u'ἠ']],
-            [u'ῆ',[u'ὴ',u'ἧ']],
+            [u'ῆ',[u'ὴ',u'ἧ',u'ῇ']],
+            [u'ἤ',[u'ἥ']],
+            [u'ὴ',[u'ή']],
+            [u'ή',[u'ὴ']],
             [u'θ',[u'ﬁ']],
             [u'δ',[u'θ']],
             [u'ο',[u'ὸ',u'c',u'o',u'σ']],
             [u'ὀ',[u'ὁ']],
             [u'ὁ',[u'ὀ']],
             [u'ὸ',[u'b',u'ὁ',u'δ']],
+            [u'ὅ',[u'ὄ']],
             [u'λ',[u'ἵ']],
+            [u'ῦ',[u'ὺ']],
             [u'v',[u'ν',u'υ']],
-            [u'Τ',[u'Ἰ',u'Ἴ',u'T',u'Γ']],
-            [u'Ἰ',[u'Ἴ',u'Ἵ']],
+            [u'Τ',[u'Ἰ',u'Ἴ',u'T',u'Γ',u'Υ']],
+            [u'Ἰ',[u'Ἴ',u'Ἵ',u'Ἱ']],
             [u'Ὁ',[u'Ὅ']],
             [u'Κ',[u'Χ',u'K']],
             [u'Λ',[u'Α',u'Δ',u'A']],
             [u'Μ',[u'M']],
             [u'Π',[u'Β']],
             [u'Ὡ',[u'Ὠ']],
+            [u'ή',[u'ἡ']],
             [u'ῇ',[u'ᾗ',u'ᾖ']],
             [u'ἡ',[u'ἥ']],
             [u'ἤ',[u'ἥ']],
             [u'ῃ',[u'η']],
+            [u'η',[u'ή']],
             [u'ὕ',[u'ὔ']],
             [u'ὔ',[u'ὕ']],
+            [u'ρ',[u'ῥ']],
             [u'ς',[u's']],
             [u'σ',[u'κ']],
             [u'τ',[u'r',u'x']],
              [u'φ',[u'ρ']],
             [u't',[u'λ',u'ι',u'ῖ',u'ἰ',u'ἱ',u'ί']],
-            [u'ύ',[u'ὐ']],
+            [u'ύ',[u'ὐ',u'ὑ']],
             [u'ὐ',[u'ύ',u'ὑ']],
             [u'ὑ',[u'ὐ']],
+            [u'ώ',[u'ῴ']],
             [u'ῶ',[u'ὧ']],
+            [u'ὠ',[u'ὡ']],
+            [u'ὡ',[u'ὠ']],
             [u'D',[u'Π',u'Β',u'Ο',u'U']],
             [u'B',[u'Β']],
-            [u'E',[u'Ε',u'F']],
+            [u'E',[u'Ε',u'Ἐ',u'F']],
             [u'Ε',[u'E',u'Ἐ',u'Ἑ']],
-            [u'Ἐ',[u'Ἑ']],
+            [u'Ἐ',[u'Ἑ',u'Ἔ']],
             [u'B',['H']],
             [u'H',[u'Π',u'Η',u'Ἡ',u'Ἡ']],
             [u'I',[u'Ι',u'J',u'l',u'Π']],
@@ -311,11 +324,11 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'l',[u't',u'ﬂ',u'i']],
             [u'u',[u'n',u'o']],
             [u'n',[u'u',u'm',u'a']],
-            [u'o',[u'q',u'c']],
+            [u'o',[u'ο',u'q',u'c']],
             [u'p',[u'q']],
             [u'q',[u'c',u'p']],
             [u'r',['t','v',u'τ']],
-            [u's',['ς']],
+            [u's',[u'ς']],
             [u't',[u'i',u'r',u'l']],
             [u'v',[u'y',u'r',u'u',u'æ']],
             [u'x',[u'z']],
@@ -335,19 +348,31 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
                     #sub_attempt = re.sub(subst[0],replacement,w)
                     #sub_attempt = w.replace(subst[0],replacement)
                     #replace this instance with the target character
-                    sub_attempt = w[:instance] +  replacement + w[instance+1:]
+                    try:
+                        sub_attempt = w[:instance] +  replacement + w[instance+1:]
+                    except UnicodeDecodeError as e:
+                        print >> sys.stderr, e, w, replacement
                     if sub_attempt in dict:
                         output = sub_attempt
-                        operation = "Sub " + subst[0] + "->" + replacement
+                        try:
+				operation = "Sub " + subst[0] + "->" + replacement
+			except UnicodeDecodeError as e:
+                        	print >> sys.stderr, e, w, replacement
                         break
                     elif in_dict_lower(dict,sub_attempt):
                         output = sub_attempt
-                        operation = "SubLower " + subst[0] + "->" + replacement
-                        break
+                        try:
+				operation = "SubLower " + subst[0] + "->" + replacement
+                        except UnicodeDecodeError as e:
+                                print >> sys.stderr, e, w, replacement
+			break
                     elif inNoAccentDict(sub_attempt, no_accent_dict) and (len(sub_attempt) > 4 or w[0].isupper()):
                         output = inNoAccentDict(sub_attempt, no_accent_dict)
-                        operation = "SubNoAcc " + subst[0] + "->" + replacement
-                        break
+                        try:
+				operation = "SubNoAcc " + subst[0] + "->" + replacement
+                        except UnicodeDecodeError as e:
+                                print >> sys.stderr, e, w, replacement
+			break
     if operation == "False":
         dup_letters_removed = re.sub(r'(.)\1{1,}',r'\1',w)
         if dup_letters_removed in dict:
@@ -398,8 +423,11 @@ for out in sorted(counts, key=counts.get, reverse=True):
     if not out == "False":
         total_fixed = total_fixed + counts[out]
         total_biomass_fixed = total_biomass_fixed + biomass[out]
-print >> sys.stderr, "#Total fixed: ", str(total_fixed)
-print >> sys.stderr, "#Percentage good:", str(total_fixed * 100.00 / total_count)
-print >> sys.stderr, "#Biomass correct: ", str( total_biomass_fixed * 100.00 / total_biomass)
-##with open(sys.argv[4], 'w') as outfile:
-##    outfile.write( yaml.dump(output_dict, default_flow_style=True) )
+try:
+	print >> sys.stderr, "#Total fixed: ", str(total_fixed)
+	print >> sys.stderr, "#Percentage good:", str(total_fixed * 100.00 / total_count)
+	print >> sys.stderr, "#Biomass correct: ", str( total_biomass_fixed * 100.00 / total_biomass)
+	##with open(sys.argv[4], 'w') as outfile:
+	##    outfile.write( yaml.dump(output_dict, default_flow_style=True) )
+except ZeroDivisionError:
+	print >> sys.stderr, "#Total count is ZERO???"
