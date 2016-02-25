@@ -142,4 +142,4 @@ ERROR_FILE=$LOG_DIR/${ARCHIVE_ID}_${DATE}_error.txt
 echo "using log file $LOG_FILE"
 rm -rf $OUTPUT_DIR
 #submit the job
-sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end --mail-abort  /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command
+sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end   /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command

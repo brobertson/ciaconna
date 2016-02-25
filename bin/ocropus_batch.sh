@@ -23,7 +23,7 @@
              echo "using migne mode"
             ;;
 	    c)
-	      columns_command="$OPTARG"
+	      columns_command="-c \"$OPTARG\""
 	      echo "columns_command is $columns_command"
 	    ;;
 	    t)
@@ -196,7 +196,7 @@
 	    echo "processing $image_file into $filebase.html"
 	    #echo "hello there output file is: $HOCR_OUTPUT_DIR/$filebase.html"
 	    #echo "eval $CIACONNA_HOME/bin/ocropus_page.sh  -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file"
-	    eval $CIACONNA_HOME/bin/ocropus_page.sh $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
+	    eval $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
 	  else
 	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
 	  fi
