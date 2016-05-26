@@ -52,6 +52,16 @@ def remove_meta_tags(treeIn):
                 meta.getparent().append(etree.Comment(string_rep))
                 meta.getparent().remove(meta)
         return treeIn
+
+def add_dublin_core_tags(treeIn):
+    head = treeIn.xpath("//html:head",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+    m = etree.SubElement(head[0],"meta")
+    m.set("name","DCTERMS.contributor")
+    m.set("content","Bruce Robertson (OCR processing)")
+    m2 = etree.SubElement(head[0],"meta")
+    m2.set("name","DCTERMS.description")
+    m2.set("content","OCR output of page images processed through the ciaconna OCR system, which in turn is based on OCRopus.")
+    return treeIn
 spellcheck_dict = {}
 euro_sign = unicode(u"\N{EURO SIGN}") 
 print sys.argv[1]
@@ -84,8 +94,9 @@ for file_name in dir_in_list:
                     treeIn = remove_meta_tags(treeIn)
                     treeIn = identify(treeIn)
 		    treeIn = dehyphenate(treeIn)
-		    fileOut.write(etree.tostring(treeIn,
-                        encoding="UTF-8", xml_declaration=True,  doctype="<!DOCTYPE html>",method="html" ))
+		    treeIn = add_dublin_core_tags(treeIn)
+                    fileOut.write(etree.tostring(treeIn,
+                        encoding="UTF-8", xml_declaration=True,  doctype="<!DOCTYPE html>",method="xml" ))
                     fileOut.close()
                 except(lxml.etree.XMLSyntaxError):
                     pass
