@@ -136,7 +136,8 @@ for file_name in dir_in_list:
                 try:
                     treeIn = etree.parse(fileIn)
                     get_hocr_words(treeIn, word_count)
-                except(lxml.etree.XMLSyntaxError):
+                except(xml.etree.XMLSyntaxError):
+                    print "XMLSyntaxError on printing ", simplified_name
                     pass
 
 total_count = 0
@@ -213,6 +214,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'δ',[u'ὅ',u'ὀ',u'ό',u'ὄ',u'ὁ',u'ό',u'ο',u'd']],
             [u'ῖ',[u'ὶ']],[u'Τ',[u'Υ']],
             [u'ἶ',[u'ἷ']],
+            [u'ἷ',[u'ἶ']],
             [u'T',[u'Υ']],
             [u'l',[u'I',u'ί',u'ἰ',u'ἱ',u'Ἰ',u'ἴ',u'i',u'ι']],
             [u'A',[u'Α',u'Ἀ',u'Ἁ',u'Λ']],
@@ -230,16 +232,16 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἅ',[u'ἄ',u'ἂ']],
             [u'ἄ',[u'θ',u'ἀ']],
             [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ']],
-            [u'ά',[u'ἀ',u'ἄ',u'ό']],
+            [u'ά',[u'ἀ',u'ἄ',u'ἁ',u'ό']],
             [u'ᾶ',[u'ᾷ']],
             [u'ἔ',[u'ἕ']],
             [u'ε',[u'ὲ',u'ἐ',u'e',u's']],
             [u'ἐ',[u'ἑ']],
             [u'ἑ',[u'ἐ']],
-            [u'έ',[u'ἐ']],
+            [u'έ',[u'ἐ',u'ἑ']],
             [u'ἱ',[u'ἰ',u'ἷ']],
-            [u'ἴ',[u'ἷ']],
-            [u'ἰ',[u'ἱ']],
+            [u'ἴ',[u'ἷ',u'ἵ']],
+            [u'ἰ',[u'ἱ',u'ἴ']],
             [u'ὶ',[u'ἱ',u'i']],
             [u'ι',[u'ἰ',u'ἱ',u'ὶ',u'ί',u'i']],
             [u'ἠ',[u'ἡ']],
@@ -253,18 +255,21 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ο',[u'ὸ',u'c',u'o',u'σ']],
             [u'ὀ',[u'ὁ']],
             [u'ὁ',[u'ὀ']],
+            [u'ό',[u'ὁ',u'ὀ']],
             [u'ὸ',[u'b',u'ὁ',u'δ']],
             [u'ὅ',[u'ὄ']],
             [u'λ',[u'ἵ']],
             [u'ῦ',[u'ὺ']],
             [u'v',[u'ν',u'υ']],
             [u'Τ',[u'Ἰ',u'Ἴ',u'T',u'Γ',u'Υ']],
+            [u'Z',[u'Ζ']],
             [u'Ἰ',[u'Ἴ',u'Ἵ',u'Ἱ']],
             [u'Ὁ',[u'Ὅ']],
             [u'Κ',[u'Χ',u'K']],
             [u'Λ',[u'Α',u'Δ',u'A']],
             [u'Μ',[u'M']],
             [u'Π',[u'Β']],
+            [u'Χ',[u'X']],
             [u'Ὡ',[u'Ὠ']],
             [u'ή',[u'ἡ']],
             [u'ῇ',[u'ᾗ',u'ᾖ']],
@@ -286,7 +291,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ώ',[u'ῴ']],
             [u'ῶ',[u'ὧ']],
             [u'ὠ',[u'ὡ']],
-            [u'ὡ',[u'ὠ']],
+            [u'ὡ',[u'ὠ',u'ὼ']],
             [u'D',[u'Π',u'Β',u'Ο',u'U']],
             [u'B',[u'Β']],
             [u'E',[u'Ε',u'Ἐ',u'F']],
@@ -307,6 +312,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'Q',[u'O']],
             [u'T',[u'Τ',u'Γ']],
             [u'X',[u'Χ','T']], #now Latin
+            [u'Z',[u'Ζ']],
             [u'a',[u'α',u'e',u'n',u's',u'u']],
             [u'b',[u'h']],
             [u'æ',[u'œ']],
@@ -319,7 +325,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ﬁ',[u'ﬂ']],
             [u'ﬀi',[u'fﬁ']],
             [u'h',[u'b',u't']],
-            [u'i',[u'l',u'ι']],
+            [u'i',[u'l',u'ι',u'ἱ',u'ἰ']],
             [u'm',[u'n']],
             [u'l',[u't',u'ﬂ',u'i']],
             [u'u',[u'n',u'o']],
