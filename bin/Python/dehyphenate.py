@@ -11,6 +11,8 @@ import unicodedata
 import HTMLParser
 
 def dehyphenate(treeIn):
+        initial_match_count = 0
+        inset_match_count = 0
         pair_count = 0
 	last_words = treeIn.xpath("//html:span[@class='ocr_word'][last()] | //span[@class='ocr_word'][last()]",namespaces={'html':"http://www.w3.org/1999/xhtml"})
 	first_words = treeIn.xpath("//html:span[@class='ocr_word'][1] | //span[@class='ocr_word'][1]",namespaces={'html':"http://www.w3.org/1999/xhtml"})
@@ -23,17 +25,33 @@ def dehyphenate(treeIn):
                     elif pair[0] == None:
                         print "START", pair[1].text
                     else:
-                        if pair[0].text[-1] == u'-':
+                        hyph_end = None
+                        if  pair[0].text[-1] == u'-':
+                            hyph_end = pair[0]
+                            initial_match_count = initial_match_count + 1 
+                            #print "im trying to set hyph_end because ", hyph_end.text
+                        else:
+                            try:
+                                 if pair[0].getprevious().text[-1] == u'-':
+                                     hyph_end = pair[0].getprevious()
+                                     inset_match_count = inset_match_count + 1
+                                     #print "a previous hyph_end! ", hyph_end.text
+                            except:
+                                 pass
+
+ 			if not (hyph_end == None):
+                            #print "found hyphenated end form: ", hyph_end.text
                             pair_count = pair_count + 1
-                            dehyphenated_form = u'' + pair[0].text[:-1] + pair[1].text
-                            hyphen_position = str(len(pair[0].text))
-                            pair[0].set('data-dehyphenatedform', dehyphenated_form)
-                            pair[0].set('data-hyphenposition', hyphen_position)
-                            pair[0].set('data-hyphenendpair',str(pair_count))
-                            pair[1].set('data-dehyphenatedform', '')
-                            pair[1].set('data-hyphenstartpair',str(pair_count))
-                        print(etree.tostring(pair[0], method='xml', encoding="utf-8", pretty_print=True))
-                        print(etree.tostring(pair[1], encoding="utf-8", pretty_print=True))
+                            dehyphenated_form = u'' + hyph_end.text[:-1] + pair[1].text
+                            #print "the dehyphenated form is: ", dehyphenated_form
+                            hyphen_position = str(len(hyph_end.text))
+                            hyph_end.set('data-dehyphenatedform', dehyphenated_form)
+                            hyph_end.set('data-hyphenposition', hyphen_position)
+                            hyph_end.set('data-hyphenendpair',str(pair_count))
+                            hyph_end.set('data-dehyphenatedform', '')
+                            hyph_end.set('data-hyphenstartpair',str(pair_count))
+                        #print(etree.tostring(pair[0], method='xml', encoding="utf-8", pretty_print=True))
+                        #print(etree.tostring(pair[1], encoding="utf-8", pretty_print=True))
 	return treeIn
 
 def identify(treeIn):
@@ -41,6 +59,8 @@ def identify(treeIn):
         for word in words:
             if word.get('id') == None:
                 word.set('id','_'+str(id(word)))
+            if word.get('data-manually-confirmed') == None:
+                word.set('data-manually-confirmed','false')
         return treeIn
 
 def remove_meta_tags(treeIn):
@@ -80,9 +100,9 @@ for file_name in dir_in_list:
                 simplified_name = file_name
                 if file_name.startswith('output-'):
                         simplified_name = file_name[7:]
-                print simplified_name
+                #print simplified_name
                 name_parts = simplified_name.split('_')
-                print name_parts
+                #print name_parts
                 simplified_name = name_parts[0] + '_' + name_parts[1] #+ '.html'
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
