@@ -57,16 +57,6 @@ for file_name in os.listdir(dir_in):
                         treeIn = etree.parse(fileIn)
                         root = treeIn.getroot()
                         htmlHead = treeIn.xpath("/html:html/html:head",namespaces={'html':"http://www.w3.org/1999/xhtml"})
-                        if len(htmlHead) == 1:
-                                etree.SubElement(htmlHead[0], 'link', rel='stylesheet', href='ocrtest.css', type='text/css')
-                                linkElt = etree.SubElement(htmlHead[0], 'script', type='text/javascript', src='http://code.jquery.com/jquery-1.11.2.min.js')
-                                etree.SubElement(htmlHead[0], 'link', rel="stylesheet", href="stylesheets/tipsy.css", type="text/css")
-                                etree.SubElement(htmlHead[0], 'script',type='text/javascript', src='http://code.jquery.com/jquery-migrate-1.2.1.min.js')
-                                linkElt = etree.SubElement(htmlHead[0], 'script', type='text/javascript', src='javascripts/jquery.tipsy.js')
-                                linkElt = etree.SubElement(htmlHead[0], 'script', type='text/javascript', src='javascripts/tipsy.hocr.js')
-                        else:
-                                head = treeIn.xpath("/html/head")
-                                linkElt = etree.SubElement(head[0], 'link', rel='stylesheet', href='ocrtest.css', type='text/css')
                                                            
                         hocr_word_elements = treeIn.xpath("//html:span[@class='ocr_word'] | //span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
                         for word_element in hocr_word_elements:
@@ -133,6 +123,8 @@ for file_name in os.listdir(dir_in):
                                       word_element.set('data-spellcheck-mode',"Numerical")
                               else:
                                       word_element.set('data-spellcheck-mode',"None")
+                           word_element.set('data-selected-form',word_element.text)
+                           word_element.set('data-manually-confirmed','false')
                         fileOut.write(etree.tostring(treeIn, encoding="UTF-8",xml_declaration=True ))
                         fileOut.close()
 		except:

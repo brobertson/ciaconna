@@ -9,6 +9,7 @@ import codecs
 import os
 import unicodedata
 import HTMLParser
+from greek_tools import is_number
 
 def dehyphenate(treeIn):
         initial_match_count = 0
@@ -40,16 +41,21 @@ def dehyphenate(treeIn):
                                  pass
 
  			if not (hyph_end == None):
+                            second_part = pair[1]
+                            #if the first thing in this line is a number, then it's
+                            #probably a line number and shouldn't be appended to the hyphen
+                            if is_number(second_part.text) and not (second_part.getnext() == None):
+                                second_part = second_part.getnext() 
                             #print "found hyphenated end form: ", hyph_end.text
                             pair_count = pair_count + 1
-                            dehyphenated_form = u'' + hyph_end.text[:-1] + pair[1].text
+                            dehyphenated_form = u'' + hyph_end.text[:-1] + second_part.text
                             #print "the dehyphenated form is: ", dehyphenated_form
                             hyphen_position = str(len(hyph_end.text))
                             hyph_end.set('data-dehyphenatedform', dehyphenated_form)
                             hyph_end.set('data-hyphenposition', hyphen_position)
                             hyph_end.set('data-hyphenendpair',str(pair_count))
-                            hyph_end.set('data-dehyphenatedform', '')
-                            hyph_end.set('data-hyphenstartpair',str(pair_count))
+                            second_part.set('data-dehyphenatedform', '')
+                            second_part.set('data-hyphenstartpair',str(pair_count))
                         #print(etree.tostring(pair[0], method='xml', encoding="utf-8", pretty_print=True))
                         #print(etree.tostring(pair[1], encoding="utf-8", pretty_print=True))
 	return treeIn

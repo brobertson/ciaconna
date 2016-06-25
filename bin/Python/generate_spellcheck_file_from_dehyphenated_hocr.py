@@ -64,6 +64,7 @@ def make_ligatures(word):
 
 def makeDict(fileName, migne_mode=False):
     import greek_tools
+    frequency_limit = 0
     words = []
     mine = codecs.open(fileName, 'r', 'utf-8')
     for line in mine:
@@ -74,7 +75,7 @@ def makeDict(fileName, migne_mode=False):
             print "this line is wrong:", line
             sys.exit()
         freq = int(freq.rstrip('\r\n'))
-        if freq > 4:
+        if freq > frequency_limit:
             word_prep = preprocess_word(word.rstrip('\n\r\x11'))
             if migne_mode:
                 word_prep = make_ligatures(word_prep)
@@ -136,7 +137,7 @@ for file_name in dir_in_list:
                 try:
                     treeIn = etree.parse(fileIn)
                     get_hocr_words(treeIn, word_count)
-                except(xml.etree.XMLSyntaxError):
+                except(lxml.etree.XMLSyntaxError):
                     print "XMLSyntaxError on printing ", simplified_name
                     pass
 
@@ -231,7 +232,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἁ',[u'ἀ']],
             [u'ἅ',[u'ἄ',u'ἂ']],
             [u'ἄ',[u'θ',u'ἀ']],
-            [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ']],
+            [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ',u'ᾶ']],
             [u'ά',[u'ἀ',u'ἄ',u'ἁ',u'ό']],
             [u'ᾶ',[u'ᾷ']],
             [u'ἔ',[u'ἕ']],
@@ -241,15 +242,15 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'έ',[u'ἐ',u'ἑ']],
             [u'ἱ',[u'ἰ',u'ἷ']],
             [u'ἴ',[u'ἷ',u'ἵ']],
-            [u'ἰ',[u'ἱ',u'ἴ']],
+            [u'ἰ',[u'ἱ',u'ἴ',u'ὶ',u'ί']],
             [u'ὶ',[u'ἱ',u'i']],
             [u'ι',[u'ἰ',u'ἱ',u'ὶ',u'ί',u'i']],
             [u'ἠ',[u'ἡ']],
             [u'ἡ',[u'ἠ']],
-            [u'ῆ',[u'ὴ',u'ἧ',u'ῇ']],
+            [u'ῆ',[u'ὴ',u'ἧ',u'ῇ',u'ή']],
             [u'ἤ',[u'ἥ']],
             [u'ὴ',[u'ή']],
-            [u'ή',[u'ὴ']],
+            [u'ή',[u'ὴ',u'ῆ']],
             [u'θ',[u'ﬁ']],
             [u'δ',[u'θ']],
             [u'ο',[u'ὸ',u'c',u'o',u'σ']],
@@ -258,8 +259,10 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ό',[u'ὁ',u'ὀ']],
             [u'ὸ',[u'b',u'ὁ',u'δ']],
             [u'ὅ',[u'ὄ']],
+            [u'ϲ',[u'c']],
             [u'λ',[u'ἵ']],
             [u'ῦ',[u'ὺ']],
+            [u'v',[u'v']],
             [u'v',[u'ν',u'υ']],
             [u'Τ',[u'Ἰ',u'Ἴ',u'T',u'Γ',u'Υ']],
             [u'Z',[u'Ζ']],
@@ -277,9 +280,10 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἤ',[u'ἥ']],
             [u'ῃ',[u'η']],
             [u'η',[u'ή']],
+            [u'κ',[u'x']],
             [u'ὕ',[u'ὔ']],
             [u'ὔ',[u'ὕ']],
-            [u'ρ',[u'ῥ']],
+            [u'ρ',[u'ῥ',u'p']],
             [u'ς',[u's']],
             [u'σ',[u'κ']],
             [u'τ',[u'r',u'x']],
@@ -289,7 +293,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ὐ',[u'ύ',u'ὑ']],
             [u'ὑ',[u'ὐ']],
             [u'ώ',[u'ῴ']],
-            [u'ῶ',[u'ὧ']],
+            [u'ῶ',[u'ὧ',u'ώ']],
             [u'ὠ',[u'ὡ']],
             [u'ὡ',[u'ὠ',u'ὼ']],
             [u'D',[u'Π',u'Β',u'Ο',u'U']],
@@ -317,7 +321,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'b',[u'h']],
             [u'æ',[u'œ']],
             [u'œ',[u'æ']],
-            [u'c',[u'e',u'o',u'q']],
+            [u'c',[u'e',u'o',u'q',u'ϲ']],
             [u'e',[u'c',u'o',u'ε']],
             [u'f',[u'i',u'l',u'ﬀ']],
             [u'g',[u'y']],
@@ -328,7 +332,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'i',[u'l',u'ι',u'ἱ',u'ἰ']],
             [u'm',[u'n']],
             [u'l',[u't',u'ﬂ',u'i']],
-            [u'u',[u'n',u'o']],
+            [u'u',[u'n',u'o',u'ν']],
             [u'n',[u'u',u'm',u'a']],
             [u'o',[u'ο',u'q',u'c']],
             [u'p',[u'q']],
@@ -336,7 +340,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'r',['t','v',u'τ']],
             [u's',[u'ς']],
             [u't',[u'i',u'r',u'l']],
-            [u'v',[u'y',u'r',u'u',u'æ']],
+            [u'v',[u'y',u'r',u'u',u'æ',u'ν']],
             [u'x',[u'z']],
             [u'y',[u'γ']],
             [u'fi',[u'ﬁ']],
