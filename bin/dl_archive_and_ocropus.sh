@@ -8,8 +8,8 @@ ARCHIVE_ID=""
 FILENAME=""
 FILE_TO_PROCESS=""
 metadata_command=""
-days=7
-gb_memory=3
+days=3
+gb_memory=2.5
 PPI=500
 migne_command=""
 scantailor_command=""
@@ -70,7 +70,7 @@ while getopts "l:c:t:v:a:f:d:m:M:r:s:in" opt; do
     s)
      DICTIONARY_FILE=$OPTARG
      if [ ! -f $DICTIONARY_FILE ]; then
-       echo "metadata file $DICTIONARY_FILE does not exist"
+       echo "dictionary file $DICTIONARY_FILE does not exist"
        exit 1
      fi
     ;;

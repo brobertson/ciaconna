@@ -218,13 +218,18 @@
 	archive_name_base="robertson_${DATE}_${base}_${classifier_file_base}_full"
 
         cd $HOCR_OUTPUT_DIR/..
-	cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ./
-	cp "$METADATA_FILE" ./${base}_meta.xml
-	zip -r $archive_name_base.zip $HOCR_OUTPUT_DIR/ *.xml
+	mkdir ${base}
+        cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ${base}/
+	cp "$METADATA_FILE" ${base}/${base}_meta.xml
+	mv $HOCR_OUTPUT_DIR ${base}
+        mv $SELECTED_DIR ${base}
+        zip -r $archive_name_base.zip ${base}
 	#cd $HOCR_OUTPUT_DIR/..
 	#cp $HOCR_OUTPUT_DIR/* $SELECTED_DIR
-	tar -czf $archive_name_base.tar.gz $INNER_HOCR_OUTPUT_DIR $INNER_SELECTED_DIR *.xml
-	cd $OCR_OUTPUT_DIR/Zips
+	tar -czf $archive_name_base.tar.gz ${base}
+        mv ${base}/$INNER_HOCR_OUTPUT_DIR ./
+        mv ${base}/$INNER_SELECTED_DIR ./
+        cd $OCR_OUTPUT_DIR/Zips
 	ln -s $IMAGE_DIR/$archive_name_base.zip
 	cd $OCR_OUTPUT_DIR/Tars
 	ln -s $IMAGE_DIR/$archive_name_base.tar.gz

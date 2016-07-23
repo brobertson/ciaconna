@@ -160,6 +160,13 @@ if $verbose ; then
 fi
 eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
 
+if ! [[ $columns_command = "-b" ]]; then
+preprocess_filename=`ls $process_dir/*.bin.png`
+preprocess_temp=$(mktemp)
+python $CIACONNA_HOME/bin/Python/remove_vertical_bars.py $preprocess_filename $preprocess_temp
+mv $preprocess_temp $preprocess_filename
+fi
+
 #if [[ -x $file_preprocess_command ]]; then
 #   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
 #   ( $file_preprocess_command  $process_dir/*.bin.png )
