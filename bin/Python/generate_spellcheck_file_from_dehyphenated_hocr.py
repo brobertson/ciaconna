@@ -138,7 +138,7 @@ for file_name in dir_in_list:
                     treeIn = etree.parse(fileIn)
                     get_hocr_words(treeIn, word_count)
                 except(lxml.etree.XMLSyntaxError):
-                    print "XMLSyntaxError on printing ", simplified_name
+                    print >> sys.stderr, "XMLSyntaxError on printing ", simplified_name
                     pass
 
 total_count = 0
@@ -234,7 +234,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἄ',[u'θ',u'ἀ']],
             [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ',u'ᾶ']],
             [u'ά',[u'ἀ',u'ἄ',u'ἁ',u'ό']],
-            [u'ᾶ',[u'ᾷ']],
+            [u'ᾶ',[u'ᾷ',u'ἆ']],
             [u'ἔ',[u'ἕ']],
             [u'ε',[u'ὲ',u'ἐ',u'e',u's']],
             [u'ἐ',[u'ἑ']],
@@ -335,7 +335,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'u',[u'n',u'o',u'ν']],
             [u'n',[u'u',u'm',u'a']],
             [u'o',[u'ο',u'q',u'c']],
-            [u'p',[u'q']],
+            [u'p',[u'q',u'ρ']],
             [u'q',[u'c',u'p']],
             [u'r',['t','v',u'τ']],
             [u's',[u'ς']],
