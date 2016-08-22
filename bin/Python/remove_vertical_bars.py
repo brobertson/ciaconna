@@ -15,7 +15,7 @@ class ImageSegmentationError(Exception):
 		return repr(self.value)
 		
 def my_filter(imageIn):
-	MAX_CCS = 4000
+	MAX_CCS = 8000
 	count = 0
 	image = imageIn
 	#imageIn.remove_border()

@@ -112,11 +112,16 @@ for file_name in dir_in_list:
                 simplified_name = name_parts[0] + '_' + name_parts[1] #+ '.html'
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
-                fileIn= codecs.open(fileIn_name,'r','utf-8')
+                try:
+                    fileIn= codecs.open(fileIn_name,'r','utf-8')
+                except Exception as e:
+                    print "codec exception: ", e
+            
                 fileOut = open(fileOut_name,'w')
 		print "checking", fileIn_name, "sending to ", fileOut_name
                 try:
-                    treeIn = etree.parse(fileIn)
+                    parser = etree.XMLParser(ns_clean=True)
+                    treeIn = etree.parse(fileIn, parser)
                     treeIn = remove_meta_tags(treeIn)
                     treeIn = identify(treeIn)
 		    treeIn = dehyphenate(treeIn)
@@ -124,8 +129,8 @@ for file_name in dir_in_list:
                     fileOut.write(etree.tostring(treeIn,
                         encoding="UTF-8", xml_declaration=True,  doctype="<!DOCTYPE html>",method="xml" ))
                     fileOut.close()
-                except(lxml.etree.XMLSyntaxError):
-                    pass
+                except lxml.etree.XMLSyntaxError as e:
+                    print "lxml error", e
 
 
 

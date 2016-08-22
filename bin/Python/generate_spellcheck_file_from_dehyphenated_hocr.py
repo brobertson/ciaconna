@@ -131,7 +131,7 @@ for file_name in dir_in_list:
                 simplified_name = name_parts[0] + '_' + name_parts[1] + ".txt"
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_in,simplified_name)
-                fileIn= codecs.open(fileIn_name,'r','utf-8')
+                fileIn= codecs.open(fileIn_name,'r','utf-8', errors="ignore")
                 fileOut = open(fileOut_name,'w')
 		#print "checking", fileIn_name, "sending to ", fileOut_name
                 try:
