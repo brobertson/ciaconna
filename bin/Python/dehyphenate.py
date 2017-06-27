@@ -17,6 +17,8 @@ def dehyphenate(treeIn):
         pair_count = 0
 	last_words = treeIn.xpath("//html:span[@class='ocr_word'][last()] | //span[@class='ocr_word'][last()]",namespaces={'html':"http://www.w3.org/1999/xhtml"})
 	first_words = treeIn.xpath("//html:span[@class='ocr_word'][1] | //span[@class='ocr_word'][1]",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+        for word in last_words:
+            print word.text
         if len(last_words) > 0 and len(first_words) > 0:
                 last_first_pairs = zip(last_words,first_words[1:]+[None])
                 last_first_pairs = [(None,first_words[0])] + last_first_pairs
@@ -25,8 +27,10 @@ def dehyphenate(treeIn):
                         print pair[0].text, "DONE"
                     elif pair[0] == None:
                         print "START", pair[1].text
-                    else:
+                    #this avoids corner case where a character has been deleted by unicode violation in the parser
+                    elif (not pair[0].text == None) and (not pair[1].text == None):
                         hyph_end = None
+                        print "pair[0].text", pair[0].text
                         if  pair[0].text[-1] == u'-':
                             hyph_end = pair[0]
                             initial_match_count = initial_match_count + 1 
@@ -113,17 +117,19 @@ for file_name in dir_in_list:
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
                 try:
-                    fileIn= codecs.open(fileIn_name,'r','utf-8')
+                    fileIn= codecs.open(fileIn_name,'r','utf-8',errors='strict')
                 except Exception as e:
                     print "codec exception: ", e
             
                 fileOut = open(fileOut_name,'w')
 		print "checking", fileIn_name, "sending to ", fileOut_name
                 try:
-                    parser = etree.XMLParser(ns_clean=True)
+                    parser = etree.XMLParser(recover=True, ns_clean=True)
                     treeIn = etree.parse(fileIn, parser)
                     treeIn = remove_meta_tags(treeIn)
+                    print "removed tags"
                     treeIn = identify(treeIn)
+                    print "identified"
 		    treeIn = dehyphenate(treeIn)
 		    treeIn = add_dublin_core_tags(treeIn)
                     fileOut.write(etree.tostring(treeIn,
