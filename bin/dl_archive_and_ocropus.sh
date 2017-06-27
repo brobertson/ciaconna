@@ -46,11 +46,11 @@ while getopts "l:c:t:v:a:f:d:m:M:r:s:in" opt; do
      metadata_command="-m $OPTARG"
      echo "metadata file is $OPTARG"
      METADATA_FILE="$OPTARG"
-     if [ ! -f $METADATA_FILE ]; then
-       echo "metadata file $METADATA_FILE does not exist"
+     if [ ! -f "$METADATA_FILE" ]; then
+       echo "metadata file "$METADATA_FILE" does not exist"
        exit 1
      fi
-     metadata_command="-m $(readlink -m $METADATA_FILE)"
+     metadata_command="-m $(readlink -m "$METADATA_FILE")"
     ;;
     M) 
      gb_memory="$OPTARG"

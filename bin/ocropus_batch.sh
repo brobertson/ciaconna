@@ -114,7 +114,7 @@
 	    cd $IMAGE_DIR
 	    /work/broberts/local/bin/pdfimages   -png -p $INPUT_FILE $base
 	    #remove inconsequential images
-	    find . -size -3500c -delete
+	    find . -size -9k -delete
 	    i=1
 	    for f in *.png; do
 	       num=$(printf %04d $i)   #zero-pad "$i", if wanted

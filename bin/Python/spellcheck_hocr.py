@@ -59,7 +59,8 @@ for file_name in os.listdir(dir_in):
                         htmlHead = treeIn.xpath("/html:html/html:head",namespaces={'html':"http://www.w3.org/1999/xhtml"})
                                                            
                         hocr_word_elements = treeIn.xpath("//html:span[@class='ocr_word'] | //span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
-                        for word_element in hocr_word_elements:
+                        filtered_hocr_word_elements = list({x for x in hocr_word_elements if x.text != None})
+                        for word_element in filtered_hocr_word_elements:
                            dhf = word_element.get('data-dehyphenatedform')
                            print "dehyph form", dhf
                            hyphenated_form = False

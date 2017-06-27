@@ -24,7 +24,9 @@ try:
    # dir_out = sys.argv[2]
 except (IndexError, ValueError) as e:
     print e
-    print "usage: list_words_from_dehyphenated_hocr.py dir_in dir_out"
+    print """usage: generate_spellcheck_file_from_dehyphenated_hocr.py 
+    $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE unique_no_accent_list.csv 
+    > $SPELLCHECK_CSV"""
     exit()
 
 
@@ -48,7 +50,7 @@ def get_hocr_words(treeIn, word_count):
     #word_count = {}
     for word in words:
         dhf = word.get('data-dehyphenatedform')
-        if dhf == '':
+        if dhf == '' or word.text == None:
             next
         elif dhf != None:
             add_word(word_count, dhf)
@@ -227,11 +229,11 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'Δ',[u'Ἀ',u'Α']],
             [u'α',[u'z',u'ο',u'a',u'σ']],
             [u'β',[u'ἵ',u'ῆ',u'ἐ',u'θ',u'ψ']],
-            [u'ἐ',[u'ἑ',u'ἔ',u'ἔ']],
+            [u'ἐ',[u'ἑ',u'ἔ',u'ἔ',u'έ']],
             [u'ἀ',[u'ἁ',u'ἅ',u'ἂ',u'ἄ']],
             [u'ἁ',[u'ἀ']],
             [u'ἅ',[u'ἄ',u'ἂ']],
-            [u'ἄ',[u'θ',u'ἀ']],
+            [u'ἄ',[u'θ',u'ἀ',u'ἁ']],
             [u'ὰ',[u'ἄ',u'ἂ',u't',u'ἀ',u'ᾶ']],
             [u'ά',[u'ἀ',u'ἄ',u'ἁ',u'ό']],
             [u'ᾶ',[u'ᾷ',u'ἆ']],
@@ -246,7 +248,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ὶ',[u'ἱ',u'i']],
             [u'ι',[u'ἰ',u'ἱ',u'ὶ',u'ί',u'i']],
             [u'ἠ',[u'ἡ']],
-            [u'ἡ',[u'ἠ']],
+            [u'ἡ',[u'ἠ',u'ἧ']],
             [u'ῆ',[u'ὴ',u'ἧ',u'ῇ',u'ή']],
             [u'ἤ',[u'ἥ']],
             [u'ὴ',[u'ή']],
@@ -279,7 +281,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ἡ',[u'ἥ']],
             [u'ἤ',[u'ἥ']],
             [u'ῃ',[u'η']],
-            [u'η',[u'ή']],
+            [u'η',[u'ή',u'ῃ']],
             [u'κ',[u'x']],
             [u'ὕ',[u'ὔ']],
             [u'ὔ',[u'ὕ']],
@@ -289,11 +291,12 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'τ',[u'r',u'x']],
              [u'φ',[u'ρ']],
             [u't',[u'λ',u'ι',u'ῖ',u'ἰ',u'ἱ',u'ί']],
-            [u'ύ',[u'ὐ',u'ὑ']],
+            [u'ύ',[u'ὐ',u'ὑ',u'ό']],
             [u'ὐ',[u'ύ',u'ὑ']],
             [u'ὑ',[u'ὐ']],
             [u'ώ',[u'ῴ']],
             [u'ῶ',[u'ὧ',u'ώ']],
+            [u'ὧ',[u'ὡ']],
             [u'ὠ',[u'ὡ']],
             [u'ὡ',[u'ὠ',u'ὼ']],
             [u'D',[u'Π',u'Β',u'Ο',u'U']],
