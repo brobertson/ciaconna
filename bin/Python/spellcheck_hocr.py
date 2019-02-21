@@ -31,10 +31,16 @@ with codecs.open(sys.argv[1],'r','utf-8') as spellcheck_file:
 	for line in spellcheck_file:
 		line = line.strip()
 		#print line
-		[original_form, replacement, frequency, spellcheck_mode] = line.split(euro_sign)
-		#print original_form, replacement, spellcheck_mode
-		if spellcheck_mode != "False":
-                        spellcheck_dict[unicodedata.normalize('NFC',original_form)] = (unicodedata.normalize('NFC',replacement), frequency, spellcheck_mode)
+                # omit comment lines from processing
+                if not (line[0] == u"#"):
+                    try:
+		        [original_form, replacement, frequency, spellcheck_mode] = line.split(euro_sign)
+		        #print original_form, replacement, spellcheck_mode
+		        if spellcheck_mode != "False":
+                            spellcheck_dict[unicodedata.normalize('NFC',original_form)] = (unicodedata.normalize('NFC',replacement), frequency, spellcheck_mode)
+                    except ValueError:
+                        print "line '",line,"' could not be processed, skipping and continuing"
+                        continue
 print "dictionary length: ", len(spellcheck_dict)
 print "reading dir ", sys.argv[2]
 

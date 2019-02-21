@@ -54,10 +54,10 @@ def get_hocr_words(treeIn, word_count):
             next
         elif dhf != None:
             add_word(word_count, dhf)
-            #print "appending dhf", dhf
+            #print "# appending dhf", dhf
         elif word.text[-1] != "-":#ommit blown hyphenated forms
             add_word(word_count, word.text)
-            #print "apending word", word.text
+            #print "# apending word", word.text
 def make_ligatures(word):
 	for pair in [[u'ae',u'æ'],[u'ff',u'ﬀ'],[u'oe',u'œ'],[u'fl',u'ﬂ'],[u'fi',u'ﬁ']]:
 		word = word.replace(pair[0],pair[1])
@@ -74,7 +74,7 @@ def makeDict(fileName, migne_mode=False):
         try:
             (word, freq) = line.split(',')
         except ValueError:
-            print "this line is wrong:", line
+            print "# this line is wrong:", line
             sys.exit()
         freq = int(freq.rstrip('\r\n'))
         if freq > frequency_limit:
@@ -109,7 +109,7 @@ def findOccurences(s, ch):
 def bothHalvesInDict(str1,str2):
   return ((str1 in dict) or in_dict_lower(dict,str1)) and ((str2 in dict) or in_dict_lower(dict,str2))
 
-#print "making dicts"
+#print "# making dicts"
 import time
 start_time = time.time()
 dict = makeDict(sys.argv[2])
@@ -117,7 +117,7 @@ dict_time = time.time() - start_time
 minutes = dict_time / 60.0
 dict = set(dict)
 no_accent_dict = makeNoAccentDict(sys.argv[3])
-#print "dict building took", minutes, " minutes."
+#print "# dict building took", minutes, " minutes."
 marker=u"€"
 
 word_count = {}
@@ -127,15 +127,15 @@ for file_name in dir_in_list:
                 simplified_name = file_name
                 if file_name.startswith('output-'):
                         simplified_name = file_name[7:]
-                #print simplified_name
+                #print u"# " + simplified_name
                 name_parts = simplified_name.split('_')
-                #print name_parts
+                #print u"# name_parts: " + name_parts
                 simplified_name = name_parts[0] + '_' + name_parts[1] + ".txt"
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_in,simplified_name)
                 fileIn= codecs.open(fileIn_name,'r','utf-8', errors="ignore")
                 fileOut = open(fileOut_name,'w')
-		#print "checking", fileIn_name, "sending to ", fileOut_name
+		#print u"# ", "checking", fileIn_name, "sending to ", fileOut_name
                 try:
                     treeIn = etree.parse(fileIn)
                     get_hocr_words(treeIn, word_count)
@@ -410,7 +410,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
                     operation="True"
                     break
     print w + marker + output + marker + str(word_count[w]) + marker + operation
-    #print "#", str(100.0 * count / total), "complete"
+    #print "# ", str(100.0 * count / total), "complete"
     #output_array.append((w,output,word_count[w],operation))
     if operation != "False":
         output_dict[w] = (output,word_count[w],operation)

@@ -1,11 +1,11 @@
 	#!/bin/bash
 	export PYTHONIOENCODING=UTF-8
 	# We expect two args: the collection_dir and the classifier_dir
-	USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default determined by ocropus defaults, usually 0.5) -a [pdf_file,zip file] -l classifier_file"
+	USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default determined by ocropus defaults, usually 0.5) -a [pdf_file,zip file] -l classifier_file -s spellcheck_dictionary"
 	E_BADARGS=65
 	INPUT_FILE=$1
 	CLASSIFIER_FILE=$2
-	OCR_OUTPUT_DIR=/work/broberts/Output
+	#OCR_OUTPUT_DIR=/work/broberts/Output
 	PPI=500
 	binarization_threshold="-t 0.6"
 	columns_command=""
@@ -210,7 +210,7 @@
         python $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
         echo "generating spellcheck file"
         #now create spellchecked forms
-        python $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/broberts/unique_no_accent_list.csv > $SPELLCHECK_CSV
+        python $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/brucerob/unique_no_accent_list.csv > $SPELLCHECK_CSV
         echo "creating spellchecked version"
         python $CIACONNA_HOME/bin/Python/spellcheck_hocr.py $SPELLCHECK_CSV  $HOCR_DEHYPHENATED_DIR $SELECTED_DIR
 

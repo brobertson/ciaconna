@@ -7,8 +7,9 @@ usage(){
   exit 1
 }
 
-delete_string=" > /dev/null "
-verbose=false
+#delete_string=" > /dev/null "
+verbose=true
+rpred_command=" --llocs --alocs -n -N -p 1 "
 image_is_preprocessed=""
 single_column_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
 columns_command=$single_column_command
@@ -160,12 +161,12 @@ if $verbose ; then
 fi
 eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
 
-if ! [[ $columns_command = "-b" ]]; then
-preprocess_filename=`ls $process_dir/*.bin.png`
-preprocess_temp=$(mktemp)
-python $CIACONNA_HOME/bin/Python/remove_vertical_bars.py $preprocess_filename $preprocess_temp
-mv $preprocess_temp $preprocess_filename
-fi
+#if ! [[ $columns_command = "-b" ]]; then
+#preprocess_filename=`ls $process_dir/*.bin.png`
+#preprocess_temp=$(mktemp)
+#python $CIACONNA_HOME/bin/Python/remove_vertical_bars.py $preprocess_filename $preprocess_temp
+#mv $preprocess_temp $preprocess_filename
+#fi
 
 #if [[ -x $file_preprocess_command ]]; then
 #   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
@@ -207,12 +208,12 @@ if $verbose ; then
   echo
   echo "Output from ocropus-rpred:"
 fi
-eval ocropus-rpred -p 16  $model_command $process_dir'/????/??????.bin.png' $delete_string
+eval ocropus-rpred $rpred_command $model_command $process_dir'/????/??????.bin.png' $delete_string
 
 if $verbose ; then
   echo
   echo "Output from ocropus-hocr:"
 fi
-eval ocropus-hocr $process_dir'/????.bin.png' -o $output_filename $delete_string
+eval ocropus-hocr $process_dir'/????.bin.png' -w -o $output_filename $delete_string
 #rm -rf $process_dir > /dev/null
-
+echo "process dir $process_dir"
