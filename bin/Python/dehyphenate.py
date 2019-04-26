@@ -49,7 +49,9 @@ def dehyphenate(treeIn):
                             #if the first thing in this line is a number, then it's
                             #probably a line number and shouldn't be appended to the hyphen
                             if is_number(second_part.text) and not (second_part.getnext() == None):
-                                second_part = second_part.getnext() 
+                                if not (second_part.getnext().text == None):
+                                   second_part = second_part.getnext() 
+                                   #print "using this as second part: ", second_part.text 
                             #print "found hyphenated end form: ", hyph_end.text
                             pair_count = pair_count + 1
                             dehyphenated_form = u'' + hyph_end.text[:-1] + second_part.text
