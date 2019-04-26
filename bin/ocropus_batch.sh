@@ -1,4 +1,5 @@
-	#!/bin/bash
+#!/bin/bash
+shopt -s extglob
 	export PYTHONIOENCODING=UTF-8
 	# We expect two args: the collection_dir and the classifier_dir
 	USAGE_MESSAGE="Usage: ocropus_batch -v -c \"columns command\" -t binarization_threshold (default determined by ocropus defaults, usually 0.5) -a [pdf_file,zip file] -l classifier_file -s spellcheck_dictionary"
@@ -12,7 +13,8 @@
         migne_command=""
         verbose=false
         do_scantailor=false
-	while getopts "l:c:t:v:a:d:m:R:s:ni" opt; do
+        NUMBER_OF_CORES=1
+	while getopts "l:c:t:v:a:d:m:R:s:P:ni" opt; do
 	  case $opt in
 	    v)
 	      delete_string=""
@@ -56,6 +58,13 @@
              do_scantailor=true
              echo "Doing scantailor..."
             ;;
+            P) 
+             NUMBER_OF_CORES=$OPTARG
+             echo "using $NUMBER_OF_CORES cores in parallel processes"
+             if [[ $var =~ ^-?[0-9]+$ ]]; then
+               echo "$NUMBER_OF_CORES is not an integer"
+               exit 1
+             fi
 	  esac
 	done
 
@@ -112,7 +121,7 @@
 	    echo "converting pdf to pngs"
 	    mkdir $IMAGE_DIR
 	    cd $IMAGE_DIR
-	    /work/broberts/local/bin/pdfimages   -png -p $INPUT_FILE $base
+	    pdfimages   -png -p $INPUT_FILE $base
 	    #remove inconsequential images
 	    find . -size -9k -delete
 	    i=1
@@ -130,18 +139,26 @@
 	    echo "uncompressing zip file"
 	    mkdir $IMAGE_DIR
 	    cd $IMAGE_DIR
+            echo "I'm at: `pwd`"
 	    unzip "$INPUT_FILE"
 	    echo "done uncompressing"
-	    for image_file in $(ls *_jp2/*.jp2 *_tif/*.tif)
-	    do
-	      b=$(basename $image_file)
-	      filebase=${b%.*}
-	      fileext=${b##*.}
-	      if [ ! -f $filebase.png ]; then
-		echo "converting $image_file to $filebase.png"
-		convert $image_file $filebase.png
-	      fi
-	    done
+            echo "so the tree looks like:"
+            tree
+            echo "converting images to png files using $NUMBER_OF_CORES cores"
+            parallel -P $NUMBER_OF_CORES convert {} {.}.png :::  *_tif/*tif *_jp2/*.jp2
+            echo "done converting"
+            echo "moving resulting png files to base directory"
+            mv *_tif/*png *_jp2/*png ./
+#	    /_jp2/*.jp2 *_tif/*.tif)
+#	    do
+#	      b=$(basename $image_file)
+#	      filebase=${b%.*}
+#	      fileext=${b##*.}
+#	      if [ ! -f $filebase.png ]; then
+#		echo "converting $image_file to $filebase.png"
+#		convert $image_file $filebase.png
+#	      fi
+#	    done
 	  else
 	    echo "directory $IMAGE_DIR already exists. Not decompressing archive."
 	  fi
@@ -158,7 +175,7 @@
         echo "HOCR_OUTPUT_DIR: $HOCR_OUTPUT_DIR"
 	SELECTED_DIR=$IMAGE_DIR/$INNER_SELECTED_DIR
 	if [ ! -d $HOCR_OUTPUT_DIR ]; then
-	  echo "making hocr output dir"
+	  echo "making hocr output dirs"
 	  mkdir $HOCR_OUTPUT_DIR
 	  mkdir $SELECTED_DIR
           mkdir $HOCR_DEHYPHENATED_DIR
@@ -189,22 +206,30 @@
 	   cd "$IMAGE_DIR"
         fi
 	echo "processing image files"
-	for image_file in $(ls *.png); do
-	  filebase=${image_file%.*}
-	  fileext=${image_file##*.}
-	  if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
-	    echo "processing $image_file into $filebase.html"
+        echo "OCRing"
+#	for image_file in $(ls *.png); do
+#	  filebase=${image_file%.*}
+#	  fileext=${image_file##*.}
+#	  if [ ! -f $HOCR_OUTPUT_DIR/$filebase.html ]; then
+#	    echo "processing $image_file into $filebase.html"
 	    #echo "hello there output file is: $HOCR_OUTPUT_DIR/$filebase.html"
 	    #echo "eval $CIACONNA_HOME/bin/ocropus_page.sh  -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file"
-	    eval $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
-	  else
-	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
-	  fi
-	  if [ ! -f $SMALL_IMAGE_DIR/$filebase.jpg ]; then
-	    echo "creating $filebase.jpg"
-	    convert $IMAGE_DIR/$image_file -scale 30% $SMALL_IMAGE_DIR/$filebase.jpg
-	  fi
-	done
+#	    eval $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
+        echo "here are the pngs:"
+        ls *.png
+        echo "Starting ocr_page in parallel with $NUMBER_OF_CORES cores"
+        parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
+#	  else
+#	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
+#	  fi
+        echo "Done OCRing"
+        echo "Making jpg files for viewing"
+        parallel -P $NUMBER_OF_CORES convert $IMAGE_DIR/{} -scale 30% $SMALL_IMAGE_DIR/{.}.jpg  ::: *.png
+#	  if [ ! -f $SMALL_IMAGE_DIR/$filebase.jpg ]; then
+#	    echo "creating $filebase.jpg"
+#	    convert $IMAGE_DIR/$image_file -scale 30% $SMALL_IMAGE_DIR/$filebase.jpg
+#	  fi
+#	done
 	echo "dehyphenating"
         #now dehyphenate
         python $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
@@ -229,12 +254,12 @@
 	tar -czf $archive_name_base.tar.gz ${base}
         mv ${base}/$INNER_HOCR_OUTPUT_DIR ./
         mv ${base}/$INNER_SELECTED_DIR ./
-        cd $OCR_OUTPUT_DIR/Zips
-	ln -s $IMAGE_DIR/$archive_name_base.zip
-	cd $OCR_OUTPUT_DIR/Tars
-	ln -s $IMAGE_DIR/$archive_name_base.tar.gz
+        #cd $OCR_OUTPUT_DIR/Zips
+	#ln -s $IMAGE_DIR/$archive_name_base.zip
+	#cd $OCR_OUTPUT_DIR/Tars
+	#ln -s $IMAGE_DIR/$archive_name_base.tar.gz
 	cd $OCR_OUTPUT_DIR/Jpgs
-	#if [ ! -d $SMALL_IMAGE_DIR ]; then
-	ln -s $SMALL_IMAGE_DIR
-	#fi
+	if [ ! -d $SMALL_IMAGE_DIR ]; then
+	  ln -s $SMALL_IMAGE_DIR
+	fi
 

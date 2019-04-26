@@ -9,7 +9,7 @@ usage(){
 
 #delete_string=" > /dev/null "
 verbose=true
-rpred_command=" --llocs --alocs -n -N -p 1 "
+rpred_command=" --llocs --alocs -n -N -p 1 -Q 1"
 image_is_preprocessed=""
 single_column_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
 columns_command=$single_column_command
@@ -200,7 +200,7 @@ if $verbose ; then
   echo
   echo "Output from $columns_bin:"
 fi
-eval $columns_bin  $columns_command  $process_dir'/????.bin.png' $delete_string
+eval $columns_bin -Q 1  $columns_command  $process_dir'/????.bin.png' $delete_string
 #process_dir_for_classifier=`mktemp -d`
 #cp -a $process_dir/* $process_dir_for_classifier
 
