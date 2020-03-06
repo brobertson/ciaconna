@@ -17,8 +17,9 @@ gb_memory=2
 PPI=500
 migne_command=""
 scantailor_command=""
-NUMBER_OF_CORES=1
-while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:in" opt; do
+tess_command=""
+NUMBER_OF_CORES=8
+while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:inT" opt; do
   case $opt in
     v)
       delete_string=""
@@ -87,6 +88,10 @@ while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:in" opt; do
        exit 1
      fi
     ;;
+    T)
+	    tess_command=" -T "
+	    echo "running this job with tesseract"
+	    ;;
     i)
      migne_command=" -i "
      echo "migne command is $migne_command"
@@ -116,7 +121,7 @@ fi
 
 
 #set date
-FOO=${DATE:=`date +%F-%H-%M`}
+FOO=${DATE:=`date +%F-%H-%M-%S`}
 OUTPUT_DIR=$(mktemp -d /tmp/temp.$ARCHIVE_ID.$DATE.XXXXXXXX) || { echo "failed to create temp file"; exit 1;}
 cd $OCR_INPUT_DIR
 if [ ! -z "$ARCHIVE_ID" ]; then
@@ -138,6 +143,8 @@ if [ ! -z "$ARCHIVE_ID" ]; then
     else
       wget  --no-check-certificate http://www.archive.org/download/${ARCHIVE_ID}/${ARCHIVE_ID}_jp2.zip
     fi
+    wget  --no-check-certificate http://www.archive.org/download/${ARCHIVE_ID}/${ARCHIVE_ID}_meta.xml
+    metadata_command="-m ${OCR_INPUT_DIR}/${ARCHIVE_ID}_meta.xml"
   fi
   FILE_TO_PROCESS=$OCR_INPUT_DIR/${ARCHIVE_ID}_*.zip
 else # ARCHIVE_ID is unset, so we have our own filename
@@ -159,9 +166,10 @@ else # ARCHIVE_ID is unset, so we have our own filename
 fi # end if [ ! -z "$ARCHIVE_ID" ]
 
 #make the name of the log file
-LOG_FILE=$OCR_LOG_DIR/${ARCHIVE_ID}_${DATE}_output.txt
-ERROR_FILE=$OCR_LOG_DIR/${ARCHIVE_ID}_${DATE}_error.txt
+LOG_FILE=$OCR_LOG_DIR/${DATE}_${ARCHIVE_ID}_output.txt
+ERROR_FILE=$OCR_LOG_DIR/${DATE}_${ARCHIVE_ID}_error.txt
 echo "using log file $LOG_FILE"
+echo "using error log file $ERROR_FILE"
 rm -rf $OUTPUT_DIR
 echo "I'm running sbatch in the following dir: `pwd`"
 #submit the job
@@ -171,4 +179,4 @@ echo "I'm running sbatch in the following dir: `pwd`"
 # A  time  limit  of  zero  requests  that no time limit be imposed.  Acceptable time formats include "minutes", "minutes:seconds", "hours:min‐
 #              utes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 
-sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE} $CIACONNA_HOME/bin/ocropus_batch.sh -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command
+sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE} -o $LOG_FILE -e $ERROR_FILE $CIACONNA_HOME/bin/ocropus_batch.sh -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command $tess_command
