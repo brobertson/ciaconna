@@ -15,6 +15,8 @@ single_column_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcol
 columns_command=$single_column_command
 migne_columns_command=" --threshold 0.4  --csminheight 1 --maxcolseps 5 "
 binarization_threshold=" -t 0.7"
+#by default, we don't check for an inverted image
+binarization_command=" -n "
 columns_bin="ocropus-gpageseg"
 #Get the args
 while getopts "e::l:o:C:c:t:vpm" opt; do
@@ -39,10 +41,11 @@ while getopts "e::l:o:C:c:t:vpm" opt; do
     ;;
     c)
       columns_command=$OPTARG
-      #echo "columns command at page is $columns_command"
+      echo "columns command at page is $columns_command"
     ;;
     t)
       binarization_threshold="-t $OPTARG"
+      echo "treshold is $binarization_threshold"
     ;;
     l)
       classifier=$OPTARG
@@ -159,14 +162,15 @@ if $verbose ; then
   echo
   echo "Output from ocropus-nlbin:"
 fi
-eval ocropus-nlbin $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
+eval ocropus-nlbin -Q 1 $binarization_command $binarization_threshold $process_file -o $process_dir $delete_string > /dev/null
 
-#if ! [[ $columns_command = "-b" ]]; then
-#preprocess_filename=`ls $process_dir/*.bin.png`
-#preprocess_temp=$(mktemp)
-#python $CIACONNA_HOME/bin/Python/remove_vertical_bars.py $preprocess_filename $preprocess_temp
-#mv $preprocess_temp $preprocess_filename
-#fi
+if ! [[ $columns_command = "-b" ]]; then
+	echo "applying 'remove vertical bars' process"
+	preprocess_filename=`ls $process_dir/*.bin.png`
+	preprocess_temp=$(mktemp)
+	python $CIACONNA_HOME/bin/Python/remove_vertical_bars.py $preprocess_filename $preprocess_temp
+	mv $preprocess_temp $preprocess_filename
+fi
 
 #if [[ -x $file_preprocess_command ]]; then
 #   echo "performing $file_preprocess_command on $process_dir/*.bin.png"
@@ -199,6 +203,7 @@ fi
 if $verbose ; then
   echo
   echo "Output from $columns_bin:"
+  echo "Columns command is: $columns_command"
 fi
 eval $columns_bin -Q 1  $columns_command  $process_dir'/????.bin.png' $delete_string
 #process_dir_for_classifier=`mktemp -d`
@@ -216,4 +221,4 @@ if $verbose ; then
 fi
 eval ocropus-hocr $process_dir'/????.bin.png' -w -o $output_filename $delete_string
 #rm -rf $process_dir > /dev/null
-echo "process dir $process_dir"
+echo "removed process dir $process_dir"
