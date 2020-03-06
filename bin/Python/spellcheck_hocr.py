@@ -50,10 +50,10 @@ for file_name in os.listdir(dir_in):
                 simplified_name = file_name
                 if file_name.startswith('output-'):
                         simplified_name = file_name[7:]
-                print simplified_name
-                name_parts = simplified_name.split('_')
-                print name_parts
-                simplified_name = name_parts[0] + '_' + name_parts[1] 
+                #print simplified_name
+                #name_parts = simplified_name.split('_')
+                #print name_parts
+                #simplified_name = name_parts[0] + '_' + name_parts[1] 
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
                 fileIn= codecs.open(fileIn_name,'r','utf-8')
