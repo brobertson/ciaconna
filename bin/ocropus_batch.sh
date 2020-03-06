@@ -13,8 +13,10 @@ shopt -s extglob
         migne_command=""
         verbose=false
         do_scantailor=false
+	process_with_tess=false
+	processor=ocropus
         NUMBER_OF_CORES=1
-	while getopts "l:c:t:v:a:d:m:R:s:P:ni" opt; do
+	while getopts "l:c:t:v:a:d:m:R:s:P:p:niT" opt; do
 	  case $opt in
 	    v)
 	      delete_string=""
@@ -54,10 +56,20 @@ shopt -s extglob
              DICTIONARY_FILE=$OPTARG
              echo "dictionary set to $DICTIONARY_FILE"
             ;;
+    	    p)
+		processor=$OPTARG
+		if [[ $processor == "tesseract" ]]; then
+			process_with_tess=true
+		fi
+	   ;;
             n)
              do_scantailor=true
              echo "Doing scantailor..."
             ;;
+            T)
+	     process_with_tess=true
+	     echo "processing with tess"
+	     ;;
             P) 
              NUMBER_OF_CORES=$OPTARG
              echo "using $NUMBER_OF_CORES cores in parallel processes"
@@ -78,10 +90,10 @@ shopt -s extglob
 	fi
 
 	#set date
-	FOO=${DATE:=`date +%F-%H-%M`}
+	FOO=${DATE:=`date +%F-%H-%M-%S`}
 	echo "Using Date $DATE"
 
-	if [ ! -f $CLASSIFIER_FILE ]; then
+	if [ ! -f $CLASSIFIER_FILE ] && [ $process_with_tess = "false" ]; then
 	  
 	  echo "classifier file $CLASSIFIER_FILE does not exist"
 	  echo $USAGE_MESSAGE
@@ -148,7 +160,7 @@ shopt -s extglob
             parallel -P $NUMBER_OF_CORES convert {} {.}.png :::  *_tif/*tif *_jp2/*.jp2
             echo "done converting"
             echo "moving resulting png files to base directory"
-            mv *_tif/*png *_jp2/*png ./
+            mv *_tif/*png *_jp2/*png *_png/*png ./
 #	    /_jp2/*.jp2 *_tif/*.tif)
 #	    do
 #	      b=$(basename $image_file)
@@ -215,10 +227,19 @@ shopt -s extglob
 	    #echo "hello there output file is: $HOCR_OUTPUT_DIR/$filebase.html"
 	    #echo "eval $CIACONNA_HOME/bin/ocropus_page.sh  -m  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file"
 #	    eval $CIACONNA_HOME/bin/ocropus_page.sh $columns_command $migne_command  $binarization_threshold  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/$filebase.html $image_file 
-        echo "here are the pngs:"
-        ls *.png
-        echo "Starting ocr_page in parallel with $NUMBER_OF_CORES cores"
-        parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh  -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
+        #echo "here are the pngs:"
+        #ls *.png
+	 if [ "$processor" == "ocropus" ]; then
+        	echo "Starting Ocropus process ocr_page in parallel with $NUMBER_OF_CORES cores"
+        	parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh  $columns_command $migne_command  $binarization_threshold -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
+	elif [ "$processor" == "tesseract" ] ; then
+		#we are processing with Tess
+		parallel  -P $NUMBER_OF_CORES "tesseract   -l eng+ell {}  $HOCR_OUTPUT_DIR/{/.} hocr" ::: *png
+		rename 's/\.hocr/.html/' $HOCR_OUTPUT_DIR/*hocr
+		elif [ "$processor" == "kraken" ] ; then
+		echo "starting kraken on everything:"
+
+	  fi
 #	  else
 #	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
 #	  fi
@@ -261,5 +282,11 @@ shopt -s extglob
 	cd $OCR_OUTPUT_DIR/Jpgs
 	if [ ! -d $SMALL_IMAGE_DIR ]; then
 	  ln -s $SMALL_IMAGE_DIR
+	fi
+	if [ -f "$XARIFY_HOME/xarify.sh" ]; then
+		echo "passing file to xarify."
+		$XARIFY_HOME/xarify.sh -s raspberrypi4g.local:8080 -o -u admin $OCR_OUTPUT_DIR/$base 
+	else
+		echo "$XARIFY_HOME/xarify.sh not found!"
 	fi
 
