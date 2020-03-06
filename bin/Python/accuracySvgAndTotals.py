@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 #given a directory of xhtml files and a directory of corresponding images,
 #this generates an svg strip representing the accuracy
-#of the ocr output and saves it in the xhtml directory as 'accuracy.svg'
+#of the ocr output and saves it in the xhtml directory as 'accuracyReport.svg'
 def makeTotalsFile(hocrPath):
-    import os, sys
+    import os, sys, lxml
     from lxml import etree
     total_ocr_words = 0
     total_correct_words = 0
@@ -15,10 +15,15 @@ def makeTotalsFile(hocrPath):
     for filename in os.listdir(hocrPath):
       if filename.endswith((".html",".xhtml",".hocr")):
         filePath = os.path.join(hocrPath,filename)
-        tree = etree.parse(filePath)
-        root = tree.getroot()
-        number_in_this = len(root.findall(".//html:span[@class='ocr_word']",namespaces))
-        correct_words_in_this = len(root.findall(".//html:span[@class='ocr_word'][@data-spellcheck-mode='True']",namespaces))
+        try: 
+            tree = etree.parse(filePath)
+            root = tree.getroot()
+            number_in_this = len(root.findall(".//html:span[@class='ocr_word']",namespaces))
+            correct_words_in_this = len(root.findall(".//html:span[@class='ocr_word'][@data-spellcheck-mode='True']",namespaces))
+        except lxml.etree.XMLSyntaxError:
+            print("Error reading XML in", filename)
+            number_in_this = 0
+            correct_words_in_this = 0
         total_ocr_words += number_in_this
         total_correct_words += correct_words_in_this
     print("total: ", total_ocr_words, "; total correct:", total_correct_words)
@@ -27,7 +32,6 @@ def makeTotalsFile(hocrPath):
     with open(os.path.join(hocrPath,"totals.xml"), "w") as text_file:
         text_file.write(out)
 
-        
 def percentageToHSLString(percentage):
     saturation = "73%"
     lightness = "55%"
@@ -41,12 +45,18 @@ def percentageToHSLString(percentage):
 percentageToHSLString(0.2)
 
 def pageAccuracy(pageIn):
+    import lxml
     from lxml import etree
     namespaces = {'html': 'http://www.w3.org/1999/xhtml'}
-    tree = etree.parse(pageIn)
-    root = tree.getroot()
-    number_in_this = len(root.findall(".//html:span[@data-spellcheck-mode]",namespaces))
-    correct_words_in_this = len(root.findall(".//html:span[@class='ocr_word'][@data-spellcheck-mode='True']",namespaces))
+    try:
+        tree = etree.parse(pageIn)
+        root = tree.getroot()
+        number_in_this = len(root.findall(".//html:span[@data-spellcheck-mode]",namespaces))
+        correct_words_in_this = len(root.findall(".//html:span[@class='ocr_word'][@data-spellcheck-mode='True']",namespaces))
+    except lxml.etree.XMLSyntaxError:
+        print("Error reading XML in", pageIn)
+        number_in_this = 0
+        correct_words_in_this = 0
     if (number_in_this == 0):
         return 0
     else:
@@ -54,23 +64,30 @@ def pageAccuracy(pageIn):
         
 #given a directory of xhtml files and a directory of corresponding images,
 #this generates an svg strip representing the accuracy
-#of the ocr output and saves it in the xhtml directory as 'accuracy.svg'
-def makeAccuracySVG(hocrPath, imagesPath):
-    import os, sys
+#of the ocr output and saves it in the xhtml directory as 'accuracyReport.svg'
+def makeAccuracySVG(hocrPath, imagesXar):
+    import os, sys, zipfile
     from lxml import etree
     from pathlib import Path
+    from zipfile import BadZipfile
     x_strip_width = 2
     svg_height = str(20)
     total_ocr_words = 0
     total_correct_words = 0
     namespaces = {'svg': 'http://www.w3.org/2000/svg'}
-    for path in [hocrPath, imagesPath]:
-        if not os.path.isdir(path):
-            sys.exit("Directory '"+ path +"' does not exist.")
+    if not os.path.isfile(imagesXar):
+        sys.exit(imagesXar +  " is not a file. Exiting")
+    if not os.path.isdir(hocrPath):
+            sys.exit("Directory '"+ hocrPath +"' does not exist. Exiting.")
     if not os.access(hocrPath, os.W_OK):
-        sys.exit("Directory '"+ dirPath +"' is not writeable.")
-    imageFiles = os.listdir(imagesPath)
+        sys.exit("Directory '"+ dirPath +"' is not writeable. Exiting.")
+    try:
+        z = zipfile.ZipFile(imagesXar)
+    except BadZipfile:
+        sys.exit("File " + imagesXar + " is not a proper zip file. Exiting.")
+    imageFiles = z.namelist()
     imageFiles.sort()
+    #print(imageFiles)
     count = 0
     width = str(len(imageFiles) * x_strip_width)
     svg_root = etree.XML("<svg:svg xmlns:svg='http://www.w3.org/2000/svg' width='" + width +  "' height='" + svg_height + "' id='svg_accuracy_report'></svg:svg>")
@@ -93,25 +110,14 @@ def makeAccuracySVG(hocrPath, imagesPath):
                 </svg:rect>
             </svg:a>'''.format(str(count),corresponding_text_file,str(count*x_strip_width),str(x_strip_width),svg_height,fill,str(count))
         svg_root.append( etree.XML(svg_rect))     
-
-
-        #tree = etree.parse(filePath)
-        #root = tree.getroot()
-        #number_in_this = len(root.findall(".//html:span[@class='ocr_word']",namespaces))
-        #correct_words_in_this = len(root.findall(".//html:span[@class='ocr_word'][@data-spellcheck-mode='True']",namespaces))
-        #total_ocr_words += number_in_this
-        #total_correct_words += correct_words_in_this
-        #print(filename,": ",number_in_this)
-
-    print(str(etree.tostring(tree.getroot(), encoding='unicode', method='xml')))
-    with open(os.path.join(hocrPath,"accuracy.svg"), "w") as text_file:
+    #print(str(etree.tostring(tree.getroot(), encoding='unicode', method='xml')))
+    with open(os.path.join(hocrPath,"accuracyReport.svg"), "w") as text_file:
         text_file.write(str(etree.tostring(tree.getroot(), encoding='unicode', method='xml')))
-
 
 def main():
     import sys, os
     if not(len(sys.argv) == 3):
-        print("usage:",os.path.basename(sys.argv[0]), "hocr_dir_path images_dir_path")
+        print("usage:",os.path.basename(sys.argv[0]), "hocr_dir_path images_file.xar")
         exit(1)
     else:
         makeTotalsFile(sys.argv[1])
