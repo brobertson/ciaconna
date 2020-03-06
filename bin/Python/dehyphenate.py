@@ -94,6 +94,13 @@ def add_dublin_core_tags(treeIn):
     m2.set("name","DCTERMS.description")
     m2.set("content","OCR output of page images processed through the ciaconna OCR system, which in turn is based on OCRopus.")
     return treeIn
+
+def convert_ocrx_to_ocr(treeIn):
+    xwords = treeIn.xpath("//html:span[@class='ocrx_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+    for word in xwords:
+        word.set('class','ocr_word')
+    return treeIn
+
 spellcheck_dict = {}
 euro_sign = unicode(u"\N{EURO SIGN}") 
 print sys.argv[1]
@@ -113,9 +120,10 @@ for file_name in dir_in_list:
                 if file_name.startswith('output-'):
                         simplified_name = file_name[7:]
                 #print simplified_name
-                name_parts = simplified_name.split('_')
-                #print name_parts
-                simplified_name = name_parts[0] + '_' + name_parts[1] #+ '.html'
+                #name_parts = simplified_name.split('_')
+                #print "name parts", name_parts
+                #simplified_name = name_parts[0] + '_' + name_parts[1] #+ '.html'
+                print simplified_name
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_out,simplified_name)
                 try:
@@ -128,6 +136,7 @@ for file_name in dir_in_list:
                 try:
                     parser = etree.XMLParser(recover=True, ns_clean=True)
                     treeIn = etree.parse(fileIn, parser)
+                    treeIn = convert_ocrx_to_ocr(treeIn)
                     treeIn = remove_meta_tags(treeIn)
                     print "removed tags"
                     treeIn = identify(treeIn)
