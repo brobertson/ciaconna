@@ -9,8 +9,8 @@ parser = argparse.ArgumentParser(description='''Convert kraken hocr output so
                                  have single space text content. Its output is
                                  namespaced XHTML.''') 
 parser.add_argument('--inputDir', help='Path to directory where source files are found', required=True)
-parser.add_argument('--outputDir', default='munged_hocr_out', help='Path to directory where output is stored')
-parser.add_argument('-c', '--confidenceSummary', default=False, action="store_true", help="store summaries of word confidence in xhtml data- attributes")
+parser.add_argument('--outputDir', help='Path to directory where output is stored', required=True)
+parser.add_argument('-c', '--confidenceSummary', default=False, action="store_true", help="store summaries of word confidence in xhtml data- attributes and cut all material after the first ; from the word span title attribute, making their mouseover popups less obtrusive.")
 parser.add_argument("-v", "--verbose", help="increase output verbosity", default=False, action="store_true")
 args = parser.parse_args()
 
@@ -77,14 +77,17 @@ def confidence_summary(treeIn):
     for word_span in word_spans:
         try:
             #this gets the confidence values for each letter and represents them as a string list
-            confs_string = word_span.get('title').split(';')[1].split(' ')[2:]
+            word_data = word_span.get('title').split(';')
+            confs_string = word_data[1].split(' ')[2:]
+            bbox_only = word_data[0]
             #convert to floats for math operations
             confs = test_list = [float(i) for i in confs_string]
-            minimum = min(confs)
-            average = mean(confs)
+            minimum = round(min(confs),2)
+            average = round(mean(confs),2)
             #add attributes with these summary values
             word_span.set('data-min-confidence',str(minimum))
             word_span.set('data-average-confidence',str(average))
+            word_span.set('title', bbox_only)
         except Exception as e:
             #there's not much to do if this goes wrong
             pass
@@ -105,11 +108,23 @@ def push_edge_spans_to_borders_of_line(treeIn):
         line_r_edge = get_bbox_val(parent,2)
         set_bbox_value(span,2,line_r_edge)
 
+def clean_ocr_page_title(xhtml, file_name):
+   ocr_page = xhtml.xpath("//html:div[@class='ocr_page'][1]",namespaces={'html':"http://www.w3.org/1999/xhtml"})[0]
+   #print(ocr_page)
+   ocr_page_title = ocr_page.get('title')
+   #print(ocr_page_title)
+   sections = ocr_page_title.split(';')
+   #print(sections)
+   new_sections = "image " + (file_name.rsplit('.', 1)[0] + '.png') + "; " + sections[0]
+   #print(new_sections)
+   ocr_page.set('title',new_sections)
+   return xhtml
+
 if not(os.path.isdir(args.inputDir)):
-    print('Image directory "'+image_dir+'" does not exist.\n\tExiting ...')
+    print('Input directory "'+image_dir+'" does not exist.\n\tExiting ...')
     sys.exit(1)
 
-#Create the output director if it doesn't exist
+#Create the output directory if it doesn't exist
 try:
     if not os.path.exists(args.outputDir):
         os.makedirs(args.outputDir, exist_ok=True)
@@ -153,6 +168,7 @@ for root, dirs, files in os.walk(args.inputDir):
                     find_xhtml_body = etree.ETXPath("//{%s}body" % XHTML_NAMESPACE)
                     results = find_xhtml_body(tree)
                     xhtml = transform_to_xhtml(tree)
+                    clean_ocr_page_title(xhtml, file_name)
                     share_space_spans(xhtml)
                     if (args.confidenceSummary):
                         confidence_summary(xhtml)
