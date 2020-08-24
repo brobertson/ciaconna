@@ -31,7 +31,7 @@ def dehyphenate(treeIn):
                     elif (not pair[0].text == None) and (not pair[1].text == None):
                         hyph_end = None
                         print "pair[0].text", pair[0].text
-                        if  pair[0].text[-1] == u'-':
+                        if  pair[0].text[-1] == u'-' and (len(pair[0].text) > 2):
                             hyph_end = pair[0]
                             initial_match_count = initial_match_count + 1 
                             #print "im trying to set hyph_end because ", hyph_end.text
