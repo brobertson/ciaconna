@@ -11,7 +11,8 @@ import unicodedata
 import HTMLParser
 from greek_tools import is_number
 
-def dehyphenate(treeIn):
+def dehyphenate(treeIn, file_name):
+        id_prefix= file_name+ '#'
         initial_match_count = 0
         inset_match_count = 0
         pair_count = 0
@@ -54,14 +55,15 @@ def dehyphenate(treeIn):
                                    #print "using this as second part: ", second_part.text 
                             #print "found hyphenated end form: ", hyph_end.text
                             pair_count = pair_count + 1
+                            pair_id = id_prefix + str(pair_count)
                             dehyphenated_form = u'' + hyph_end.text[:-1] + second_part.text
                             #print "the dehyphenated form is: ", dehyphenated_form
                             hyphen_position = str(len(hyph_end.text))
                             hyph_end.set('data-dehyphenatedform', dehyphenated_form)
                             hyph_end.set('data-hyphenposition', hyphen_position)
-                            hyph_end.set('data-hyphenendpair',str(pair_count))
+                            hyph_end.set('data-hyphenendpair', pair_id)
                             second_part.set('data-dehyphenatedform', '')
-                            second_part.set('data-hyphenstartpair',str(pair_count))
+                            second_part.set('data-hyphenstartpair', pair_id)
                         #print(etree.tostring(pair[0], method='xml', encoding="utf-8", pretty_print=True))
                         #print(etree.tostring(pair[1], encoding="utf-8", pretty_print=True))
 	return treeIn
@@ -141,7 +143,7 @@ for file_name in dir_in_list:
                     print "removed tags"
                     treeIn = identify(treeIn)
                     print "identified"
-		    treeIn = dehyphenate(treeIn)
+		    treeIn = dehyphenate(treeIn, file_name)
 		    treeIn = add_dublin_core_tags(treeIn)
                     fileOut.write(etree.tostring(treeIn,
                         encoding="UTF-8", xml_declaration=True,  doctype="<!DOCTYPE html>",method="xml" ))

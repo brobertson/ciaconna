@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, sys, argparse
+import html, os, sys, argparse
 from statistics import mean
 from lxml import etree
 #parse the arguments 
@@ -16,12 +16,29 @@ args = parser.parse_args()
 
 def get_bbox_val(span, position):
     try:
-        return int(span.get('title').split(';')[0].split(' ')[position+1])
+        parts = html.unescape(span.get('title')).split(';')
+        bbox_string = ""
+        for part in parts:
+            part = part.strip()
+            if part.startswith('bbox'):
+                bbox_string = part
+        if bbox_string == "":
+            print("couldn't find the bbox part!")
+        return int(bbox_string.split(' ')[position+1])
     except Exception as e:
         print("Exception getting title element on span {}".format(etree.tostring(span)))
+        print(e)
         raise
     
-    
+def get_bbox_area(span):
+    try:
+        width = get_bbox_val(span,2) - get_bbox_val(span,0)
+        height = get_bbox_val(span,3) - get_bbox_val(span,1)
+        return width * height
+    except Exception as e:
+        print("Exception getting area on span  {}".format(etree.tostring(span)))
+        raise
+
 def set_bbox_value(span, position, val):
     try:
         parts = span.get('title').split(';')
@@ -35,6 +52,8 @@ def set_bbox_value(span, position, val):
     span.set('title', parts_out)
 
 def share_space_spans(treeIn):
+            right_max_fudge_factor = 7
+            left_max_fudge_factor = 5
             space_spans = treeIn.xpath("//html:span[@class='ocrx_word'][text()=' ']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
             #print('space spans: {}'.format(len(space_spans)))
             for space_span in space_spans:
@@ -61,10 +80,13 @@ def share_space_spans(treeIn):
                     left_pos = get_bbox_val(previous_span,2)
                     right_pos = get_bbox_val(next_span,0)
                     middle =  int((left_pos + right_pos) / 2)
+                    third = int((right_pos - left_pos) / 3)
+                    left_fudge = min(third,left_max_fudge_factor)
+                    right_fudge = min(third,right_max_fudge_factor)
                     if (args.verbose) :
                         print("left side: {0}; right side: {1}; middle: {2}".format(left_pos, right_pos, middle))
-                    set_bbox_value(previous_span, 2, middle)
-                    set_bbox_value(next_span, 0, middle)
+                    set_bbox_value(previous_span, 2, left_pos + left_fudge)
+                    set_bbox_value(next_span, 0, right_pos - right_fudge)
                     if (args.verbose):
                         print(previous_span.text)
                         print("previous_span new title: {}".format(previous_span.get('title')))
@@ -99,6 +121,7 @@ def push_edge_spans_to_borders_of_line(treeIn):
             print("first span title: {}".format(span.get('title')))
         parent = span.getparent()
         line_l_edge = get_bbox_val(parent, 0)
+        line_l_edge = line_l_edge + 1
         if (args.verbose):
             print("line_l_edge {}".format(line_l_edge))
         set_bbox_value(span, 0, line_l_edge)
@@ -106,7 +129,21 @@ def push_edge_spans_to_borders_of_line(treeIn):
     for span in last_spans:
         parent = span.getparent()
         line_r_edge = get_bbox_val(parent,2)
+        line_r_edge = line_r_edge - 1
         set_bbox_value(span,2,line_r_edge)
+
+def get_word_span_area(treeIn):
+    word_spans = treeIn.xpath("//html:span[@class='ocrx_word'] | //html:span[@class='ocr_word']",namespaces={'html':"http://www.w3.org/1999/xhtml"})
+    image_area = get_bbox_area(treeIn.xpath("//html:div[@class='ocr_page'][1]",namespaces={'html':"http://www.w3.org/1999/xhtml"})[0])
+    print("image area: {}".format(image_area))
+    for span in word_spans:
+        area = get_bbox_area(span)
+        #print("word area:",area)
+        if (area > image_area / 3):
+            print("big word area, deleting: {}".format(area))
+            print(etree.tostring(span))
+            span.getparent().remove(span)
+
 
 def clean_ocr_page_title(xhtml, file_name):
    ocr_page = xhtml.xpath("//html:div[@class='ocr_page'][1]",namespaces={'html':"http://www.w3.org/1999/xhtml"})[0]
@@ -168,11 +205,12 @@ for root, dirs, files in os.walk(args.inputDir):
                     find_xhtml_body = etree.ETXPath("//{%s}body" % XHTML_NAMESPACE)
                     results = find_xhtml_body(tree)
                     xhtml = transform_to_xhtml(tree)
+                    get_word_span_area(xhtml)
                     clean_ocr_page_title(xhtml, file_name)
                     share_space_spans(xhtml)
                     if (args.confidenceSummary):
                         confidence_summary(xhtml)
-                    push_edge_spans_to_borders_of_line(xhtml)
+                    #push_edge_spans_to_borders_of_line(xhtml)
                     xhtml.write(os.path.join(args.outputDir,file_name),pretty_print=True, xml_declaration=True,   encoding="utf-8")
                 except Exception as e:
                     print("This exception was thrown on file {}".format(file_name))

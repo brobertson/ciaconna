@@ -16,7 +16,7 @@ shopt -s extglob
 	process_with_tess=false
 	processor=ocropus
         NUMBER_OF_CORES=1
-	while getopts "l:c:t:v:a:d:m:R:s:P:p:niT" opt; do
+	while getopts "l:c:t:v:a:d:m:R:s:P:p:ni" opt; do
 	  case $opt in
 	    v)
 	      delete_string=""
@@ -26,10 +26,6 @@ shopt -s extglob
              migne_command=" -m "
              echo "using migne mode"
             ;;
-	    c)
-	      columns_command="-c \"$OPTARG\""
-	      echo "columns_command is $columns_command"
-	    ;;
 	    t)
 	      binarization_threshold="-t $OPTARG"
 	    ;;
@@ -58,18 +54,20 @@ shopt -s extglob
             ;;
     	    p)
 		processor=$OPTARG
+		echo "processor set to $processor"
 		if [[ $processor == "tesseract" ]]; then
 			process_with_tess=true
 		fi
 	   ;;
+	   c)
+		columns_command=" $OPTARG "
+              	echo $OPTARG
+              	echo "columns_command at ocropus_batch is $columns_command"
+            ;;
             n)
              do_scantailor=true
              echo "Doing scantailor..."
             ;;
-            T)
-	     process_with_tess=true
-	     echo "processing with tess"
-	     ;;
             P) 
              NUMBER_OF_CORES=$OPTARG
              echo "using $NUMBER_OF_CORES cores in parallel processes"
@@ -105,17 +103,19 @@ shopt -s extglob
 	  exit $E_BADARGS
 	fi
         if [ ! -f "$DICTIONARY_FILE" ]; then
-          echo "dictionary file $DICTIONARY_FILE does not exist"
+          echo "dictionary file \"$DICTIONARY_FILE\" does not exist"
           echo $USAGE_MESSAGE
           exit $E_BADARGS
         fi
 	file=${INPUT_FILE##*/}
 	echo "file $file"
 	base=${file%.*}
-	base=${base%_*}
 	ext=${file##*.}
-
-
+	#zip files have _tif.zip or _png.zip, so we strip this off, but we
+	#shouldn't do it for pdfs, because the '_' might be in the name
+	if [ "$ext" == "zip" ]; then
+		base=${base%_*}
+	fi
 	if [ ! "$ext" == "pdf" ] && [ ! "$ext" == "zip" ]; then
 	  echo "pdf file $INPUT_FILE does not have a recognized extension: $ext"
 	  echo $USAGE_MESSAGE
@@ -134,8 +134,16 @@ shopt -s extglob
 	    mkdir $IMAGE_DIR
 	    cd $IMAGE_DIR
 	    pdfimages   -png -p $INPUT_FILE $base
+	    #convert ones that came out as jp2 to png
+	    parallel -P $NUMBER_OF_CORES opj_decompress -i  {} -o {.}.png ::: *jp2
 	    #remove inconsequential images
 	    find . -size -9k -delete
+	    #remove certain label strips
+	    for f in *png; do
+		    if file  $f | grep 'PNG image data, 67 x'; then
+			    rm $f
+			fi
+	    done
 	    i=1
 	    for f in *.png; do
 	       num=$(printf %04d $i)   #zero-pad "$i", if wanted
@@ -157,7 +165,8 @@ shopt -s extglob
             echo "so the tree looks like:"
             tree
             echo "converting images to png files using $NUMBER_OF_CORES cores"
-            parallel -P $NUMBER_OF_CORES convert {} {.}.png :::  *_tif/*tif *_jp2/*.jp2
+            parallel -P $NUMBER_OF_CORES opj_decompress  -i {} -o {.}.png ::: *_jp2/*.jp2
+	    parallel -P $NUMBER_OF_CORES convert {} {.}.png ::: *_tif/*tif
             echo "done converting"
             echo "moving resulting png files to base directory"
             mv *_tif/*png *_jp2/*png *_png/*png ./
@@ -231,15 +240,38 @@ shopt -s extglob
         #ls *.png
 	 if [ "$processor" == "ocropus" ]; then
         	echo "Starting Ocropus process ocr_page in parallel with $NUMBER_OF_CORES cores"
-        	parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh  $columns_command $migne_command  $binarization_threshold -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
+        	parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh -v $columns_command $migne_command  $binarization_threshold -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
 	elif [ "$processor" == "tesseract" ] ; then
 		#we are processing with Tess
-		parallel  -P $NUMBER_OF_CORES "tesseract   -l eng+ell {}  $HOCR_OUTPUT_DIR/{/.} hocr" ::: *png
+		parallel  -P $NUMBER_OF_CORES "tesseract   -l lat {}  $HOCR_OUTPUT_DIR/{/.} hocr" ::: *png
 		rename 's/\.hocr/.html/' $HOCR_OUTPUT_DIR/*hocr
-		elif [ "$processor" == "kraken" ] ; then
-		echo "starting kraken on everything:"
-
-	  fi
+		#fix oversized word spans, a tesseract bug
+		tempdir=$(mktemp -d)
+		mkdir $tempdir
+		python3 ~/Lace2-tools/normalize_hocr.py --inputDir $HOCR_OUTPUT_DIR --outputDir $tempdir -f -v
+	        mv $tempdir/* $HOCR_OUTPUT_DIR
+		rmdir $tempdir	
+	elif [ "$processor" == "kraken" ]; then
+		#conda info 
+		#conda activate kraken
+		echo "activating conda kraken-3.0b19"
+		eval "$(conda shell.bash hook)"
+		conda activate kraken-3.0b19
+		echo "Starting Kraken with $NUMBER_OF_CORES cores."
+		mkdir $DATE
+		echo "using temp kraken output dir: $DATE"
+		echo "here are the pngs:"
+		ls *png
+		#echo "here's the code:" 
+		files_command=$(ls *png | sed "s/^\(.*\).png/-i \1.png $DATE\/\1.html/")
+		echo $files_command
+		echo "kraken's threshold is ${binarization_threshold##* }"
+		# put -t 200 after columns_command here
+		parallel --timeout 600  -P $NUMBER_OF_CORES "kraken  -v -d cuda:0  -i {} $DATE/{.}.html binarize --threshold ${binarization_threshold##* } segment  --black-colseps --maxcolseps 1 $columns_command   ocr -h -m $CLASSIFIER_FILE" ::: *png 
+		#kraken  -v -d cuda:0  $files_command binarize segment -b -t 200 ocr --threads 8 -h -m $CLASSIFIER_FILE
+		python3 $CIACONNA_HOME/bin/Python/remove_spaces_from_kraken_hocr.py --inputDir $DATE --outputDir $HOCR_OUTPUT_DIR -c 
+		rm -rf $DATE
+	fi
 #	  else
 #	    echo "Skipping $HOCR_OUTPUT_DIR/$filebase.html It already exists."
 #	  fi
@@ -253,12 +285,12 @@ shopt -s extglob
 #	done
 	echo "dehyphenating"
         #now dehyphenate
-        python $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
+        python2 $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
         echo "generating spellcheck file"
         #now create spellchecked forms
-        python $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/brucerob/unique_no_accent_list.csv > $SPELLCHECK_CSV
+        python2 $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/brucerob/unique_no_accent_list.csv > $SPELLCHECK_CSV
         echo "creating spellchecked version"
-        python $CIACONNA_HOME/bin/Python/spellcheck_hocr.py $SPELLCHECK_CSV  $HOCR_DEHYPHENATED_DIR $SELECTED_DIR
+        python2 $CIACONNA_HOME/bin/Python/spellcheck_hocr.py $SPELLCHECK_CSV  $HOCR_DEHYPHENATED_DIR $SELECTED_DIR
 
         echo "Classifier file base: $classifier_file_base"
 	archive_name_base="robertson_${DATE}_${base}_${classifier_file_base}_full"
@@ -267,6 +299,7 @@ shopt -s extglob
 	mkdir ${base}
         cp "$IMAGE_DIR/*_tif/*.xml $IMAGE_DIR/*_jp2/*.xml" ${base}/
 	cp "$METADATA_FILE" ${base}/${base}_meta.xml
+	cp "$METADATA_FILE" $IMAGE_DIR
 	mv $HOCR_OUTPUT_DIR ${base}
         mv $SELECTED_DIR ${base}
         zip -r $archive_name_base.zip ${base}
@@ -285,7 +318,7 @@ shopt -s extglob
 	fi
 	if [ -f "$XARIFY_HOME/xarify.sh" ]; then
 		echo "passing file to xarify."
-		$XARIFY_HOME/xarify.sh -s raspberrypi4g.local:8080 -o -u admin $OCR_OUTPUT_DIR/$base 
+		$XARIFY_HOME/xarify.sh -d 00 -s raspberrypi4g.local:8080 -o -u admin $OCR_OUTPUT_DIR/$base 
 	else
 		echo "$XARIFY_HOME/xarify.sh not found!"
 	fi

@@ -17,16 +17,16 @@ gb_memory=2
 PPI=500
 migne_command=""
 scantailor_command=""
-tess_command=""
-NUMBER_OF_CORES=8
-while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:inT" opt; do
+processor=ocropus
+NUMBER_OF_CORES=6
+while getopts "l:c:t:v:a:f:d:m:M:p:P:R:r:s:inT" opt; do
   case $opt in
     v)
       delete_string=""
       verbose=true
     ;;
     c)
-      columns_command="-c \"$OPTARG\""
+      columns_command="-c '$OPTARG'"
       echo "columns command is: $columns_command"
     ;;
     t)
@@ -49,7 +49,7 @@ while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:inT" opt; do
       echo "date is $DATE"
     ;;
     m)
-     metadata_command="-m $OPTARG"
+     metadata_command="-m \"$OPTARG\""
      echo "metadata file is $OPTARG"
      METADATA_FILE="$OPTARG"
      if [ ! -f "$METADATA_FILE" ]; then
@@ -84,14 +84,16 @@ while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:inT" opt; do
     s)
      DICTIONARY_FILE=$OPTARG
      if [ ! -f "$DICTIONARY_FILE" ]; then
-       echo "dictionary file $DICTIONARY_FILE does not exist"
+       echo "dictionary file '$DICTIONARY_FILE' does not exist"
        exit 1
+     else
+	     echo "dictionary file: $DICTIONARY_FILE"
      fi
     ;;
-    T)
-	    tess_command=" -T "
-	    echo "running this job with tesseract"
-	    ;;
+    p) 
+	processor=$OPTARG
+	echo "processing with $processor"
+	;;
     i)
      migne_command=" -i "
      echo "migne command is $migne_command"
@@ -104,10 +106,10 @@ while getopts "l:c:t:v:a:f:d:m:M:P:R:r:s:inT" opt; do
 done
 
 
-#if [ ! -f "$CLASSIFIER_FILE" ]; then
-#  echo "classifier file $CLASSIFIER_FILE does not exist"
-#  exit 1
-#fi
+if [ ! -f "$CLASSIFIER_FILE" ]; then
+  echo "classifier file $CLASSIFIER_FILE does not exist"
+  exit 1
+fi
 
 if [ ! -d "$OCR_INPUT_DIR" ]; then
   echo "Please set environment variable 'OCR_INPUT_DIR' to a valid directory: directory '$OCR_INPUT_DIR' does not exist."
@@ -160,7 +162,7 @@ else # ARCHIVE_ID is unset, so we have our own filename
    echo $file
    base=${file%.*}
    echo $base
-   ARCHIVE_ID=${base%_*} 
+   ARCHIVE_ID=$base #${base%_*} 
    echo "ARCHIVE_ID: $ARCHIVE_ID"
   fi # end if [ ! -e "$FILENAME" ]
 fi # end if [ ! -z "$ARCHIVE_ID" ]
@@ -172,6 +174,7 @@ echo "using log file $LOG_FILE"
 echo "using error log file $ERROR_FILE"
 rm -rf $OUTPUT_DIR
 echo "I'm running sbatch in the following dir: `pwd`"
+echo "classifier file: $CLASSIFIER_FILE"
 #submit the job
 #in this version, we will make a new shell file for the actual job
 #sqsub --mpp=${gb_memory}G -o $LOG_FILE -e $ERROR_FILE -r ${days}d -q serial --mail-start --mail-end   /home/broberts/ciaconna/bin/ocropus_batch.sh -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command
@@ -179,4 +182,4 @@ echo "I'm running sbatch in the following dir: `pwd`"
 # A  time  limit  of  zero  requests  that no time limit be imposed.  Acceptable time formats include "minutes", "minutes:seconds", "hours:min‐
 #              utes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 
-sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE} -o $LOG_FILE -e $ERROR_FILE $CIACONNA_HOME/bin/ocropus_batch.sh -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l $CLASSIFIER_FILE $binarization_threshold $columns_command $metadata_command $migne_command -R $PPI -s $DICTIONARY_FILE $scantailor_command $tess_command
+sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE}  -o $LOG_FILE -e $ERROR_FILE $CIACONNA_HOME/bin/ocropus_batch.sh -s "${DICTIONARY_FILE}" -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l "${CLASSIFIER_FILE}" $binarization_threshold  ${columns_command} ${metadata_command} ${migne_command} -R $PPI  -p ${processor} 

@@ -74,9 +74,13 @@ def makeDict(fileName, migne_mode=False):
         try:
             (word, freq) = line.split(',')
         except ValueError:
-            print "# this line is wrong:", line
-            sys.exit()
-        freq = int(freq.rstrip('\r\n'))
+            #print "# this line is wrong:", line, " so I'm using the whole line as the word"
+            word = line#sys.exit()
+            freq = '5'
+        try: 
+            freq = int(freq.rstrip('\r\n'))
+        except AttributeError:
+            freq = 5
         if freq > frequency_limit:
             word_prep = preprocess_word(word.rstrip('\n\r\x11'))
             if migne_mode:
@@ -109,7 +113,7 @@ def findOccurences(s, ch):
 def bothHalvesInDict(str1,str2):
   return ((str1 in dict) or in_dict_lower(dict,str1)) and ((str2 in dict) or in_dict_lower(dict,str2))
 
-#print "# making dicts"
+print "# making dicts"
 import time
 start_time = time.time()
 dict = makeDict(sys.argv[2])
@@ -117,7 +121,7 @@ dict_time = time.time() - start_time
 minutes = dict_time / 60.0
 dict = set(dict)
 no_accent_dict = makeNoAccentDict(sys.argv[3])
-#print "# dict building took", minutes, " minutes."
+print "# dict building took", minutes, " minutes."
 marker=u"€"
 
 word_count = {}
@@ -128,14 +132,13 @@ for file_name in dir_in_list:
                 if file_name.startswith('output-'):
                         simplified_name = file_name[7:]
                 #print u"# " + simplified_name
-                name_parts = simplified_name.split('_')
-                #print u"# name_parts: " + name_parts
-                simplified_name = name_parts[0] + '_' + name_parts[1] + ".txt"
+                simplified_name = simplified_name.rsplit('.',1)[0] + ".txt"
+                #print u"new simplified name: " + simplified_name
                 fileIn_name = os.path.join(dir_in,file_name)
                 fileOut_name = os.path.join(dir_in,simplified_name)
                 fileIn= codecs.open(fileIn_name,'r','utf-8', errors="ignore")
                 fileOut = open(fileOut_name,'w')
-		#print u"# ", "checking", fileIn_name, "sending to ", fileOut_name
+                #print u"# ", "checking", fileIn_name, "sending to ", fileOut_name
                 try:
                     treeIn = etree.parse(fileIn)
                     get_hocr_words(treeIn, word_count)
@@ -149,7 +152,7 @@ counts = {}
 biomass = {}
 output_array = []
 output_dict = {}
-punct_split='([\.,·;’\[\]\)\(])'
+punct_split='([\.,·;’〉〈\[\]\)\(])'
 punct_re = re.compile(punct_split)
 count = 0
 total = len(word_count)
