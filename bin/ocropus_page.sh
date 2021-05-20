@@ -11,7 +11,7 @@ usage(){
 verbose=true
 rpred_command=" --llocs --alocs -n -N -p 1 -Q 1"
 image_is_preprocessed=""
-single_column_command=" --threshold 0.4 --hscale 4 --csminheight 50000  --maxcolseps 1 "
+single_column_command=" --threshold 0.5 --hscale 4 --csminheight 50000  --maxcolseps 1 "
 columns_command=$single_column_command
 migne_columns_command=" --threshold 0.4  --csminheight 1 --maxcolseps 5 "
 binarization_threshold=" -t 0.7"
@@ -220,5 +220,5 @@ if $verbose ; then
   echo "Output from ocropus-hocr:"
 fi
 eval ocropus-hocr $process_dir'/????.bin.png' -w -o $output_filename $delete_string
-#rm -rf $process_dir > /dev/null
+rm -rf $process_dir > /dev/null
 echo "removed process dir $process_dir"

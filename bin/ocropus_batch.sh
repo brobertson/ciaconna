@@ -14,7 +14,7 @@ shopt -s extglob
         verbose=false
         do_scantailor=false
 	process_with_tess=false
-	processor=ocropus
+	processor=kraken
         NUMBER_OF_CORES=1
 	while getopts "l:c:t:v:a:d:m:R:s:P:p:ni" opt; do
 	  case $opt in
@@ -243,7 +243,7 @@ shopt -s extglob
         	parallel -P $NUMBER_OF_CORES $CIACONNA_HOME/bin/ocropus_page.sh -v $columns_command $migne_command  $binarization_threshold -l $CLASSIFIER_FILE -o $HOCR_OUTPUT_DIR/{.}.html  {} ::: *.png  
 	elif [ "$processor" == "tesseract" ] ; then
 		#we are processing with Tess
-		parallel  -P $NUMBER_OF_CORES "tesseract   -l lat {}  $HOCR_OUTPUT_DIR/{/.} hocr" ::: *png
+		parallel  -P $NUMBER_OF_CORES "tesseract   -l frk+Greek  {}  $HOCR_OUTPUT_DIR/{/.} hocr" ::: *png
 		rename 's/\.hocr/.html/' $HOCR_OUTPUT_DIR/*hocr
 		#fix oversized word spans, a tesseract bug
 		tempdir=$(mktemp -d)
@@ -256,7 +256,8 @@ shopt -s extglob
 		#conda activate kraken
 		echo "activating conda kraken-3.0b19"
 		eval "$(conda shell.bash hook)"
-		conda activate kraken-3.0b19
+		#conda activate kraken-3.0b19
+		conda activate kraken-3.0b24
 		echo "Starting Kraken with $NUMBER_OF_CORES cores."
 		mkdir $DATE
 		echo "using temp kraken output dir: $DATE"
@@ -267,7 +268,7 @@ shopt -s extglob
 		echo $files_command
 		echo "kraken's threshold is ${binarization_threshold##* }"
 		# put -t 200 after columns_command here
-		parallel --timeout 600  -P $NUMBER_OF_CORES "kraken  -v -d cuda:0  -i {} $DATE/{.}.html binarize --threshold ${binarization_threshold##* } segment  --black-colseps --maxcolseps 1 $columns_command   ocr -h -m $CLASSIFIER_FILE" ::: *png 
+		parallel --timeout 600  -P $NUMBER_OF_CORES "kraken  -v -h -d cuda:0  -i {} $DATE/{.}.html binarize --threshold ${binarization_threshold##* } segment  --maxcolseps 0  $columns_command   ocr  -m $CLASSIFIER_FILE" ::: *png 
 		#kraken  -v -d cuda:0  $files_command binarize segment -b -t 200 ocr --threads 8 -h -m $CLASSIFIER_FILE
 		python3 $CIACONNA_HOME/bin/Python/remove_spaces_from_kraken_hocr.py --inputDir $DATE --outputDir $HOCR_OUTPUT_DIR -c 
 		rm -rf $DATE
