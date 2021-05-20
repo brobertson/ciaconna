@@ -1,6 +1,6 @@
 # ciaconna
 
-Polytonic Greek OCR tool suite based on Rigaudon and Ocropus 0.7
+Polytonic Greek OCR tool suite based on Slurm scheduler Using Kraken or Tesseract 
 
 ## Instructions:
 1. Download and install [Ocropus 0.7](https://code.google.com/p/ocropus/)
