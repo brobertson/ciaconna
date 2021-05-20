@@ -19,6 +19,7 @@ migne_command=""
 scantailor_command=""
 processor=ocropus
 NUMBER_OF_CORES=6
+DICTIONARY_FILE=$CIACONNA_HOME/Dictionaries/latin_greek.txt
 while getopts "l:c:t:v:a:f:d:m:M:p:P:R:r:s:inT" opt; do
   case $opt in
     v)
@@ -87,7 +88,7 @@ while getopts "l:c:t:v:a:f:d:m:M:p:P:R:r:s:inT" opt; do
        echo "dictionary file '$DICTIONARY_FILE' does not exist"
        exit 1
      else
-	     echo "dictionary file: $DICTIONARY_FILE"
+	     echo "dictionary file set to: $DICTIONARY_FILE"
      fi
     ;;
     p) 
