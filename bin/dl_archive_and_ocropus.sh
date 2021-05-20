@@ -182,4 +182,4 @@ echo "classifier file: $CLASSIFIER_FILE"
 # A  time  limit  of  zero  requests  that no time limit be imposed.  Acceptable time formats include "minutes", "minutes:seconds", "hours:min‐
 #              utes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 
-sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE}  -o $LOG_FILE -e $ERROR_FILE $CIACONNA_HOME/bin/ocropus_batch.sh -s "${DICTIONARY_FILE}" -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l "${CLASSIFIER_FILE}" $binarization_threshold  ${columns_command} ${metadata_command} ${migne_command} -R $PPI  -p ${processor} 
+sbatch --ntasks $NUMBER_OF_CORES --mem-per-cpu ${gb_memory} --time ${days}-0 -J ${ARCHIVE_ID}_${DATE}  -o $LOG_FILE -e $ERROR_FILE $CIACONNA_HOME/bin/process_batch.sh -s "${DICTIONARY_FILE}" -P $NUMBER_OF_CORES -a $FILE_TO_PROCESS -d $DATE -l "${CLASSIFIER_FILE}" $binarization_threshold  ${columns_command} ${metadata_command} ${migne_command} -R $PPI  -p ${processor} 
