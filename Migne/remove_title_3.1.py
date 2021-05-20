@@ -363,7 +363,7 @@ for infile in infiles:
     if opt_rc:
         (angle, accuracy) = img.rotation_angle_projections(-5,5)
         if abs(angle) > accuracy:
-            #print "rotation of", angle, "detected: rotate image"
+            print "rotation of", angle, "detected: rotate image"
             img = img.rotate(angle)
 
     # compute some statistics
