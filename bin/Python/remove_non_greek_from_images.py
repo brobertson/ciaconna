@@ -38,22 +38,22 @@ def get_bbox_val(span, position):
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), 1))
 
-def delete_span(span,img):
+def delete_span(span,img,broaden=0):
     print("gonna be deleted: '{}' ".format(span.text))
     # Start coordinate, here (100, 50)
     # represents the top left corner of rectangle
-    start_point = (get_bbox_val(span,0), get_bbox_val(span,1))
+    start_point = (get_bbox_val(span,0)-broaden, get_bbox_val(span,1))
 
     # Ending coordinate, here (125, 80)
     # represents the bottom right corner of rectangle
-    end_point = (get_bbox_val(span,2), get_bbox_val(span,3))
+    end_point = (get_bbox_val(span,2)+broaden, get_bbox_val(span,3))
 
-    # Black color in BGR
-    color = (255, 0, 0)
+    # White color in BGR
+    color = (255, 255, 255)
 
     # Line thickness of -1 px
     # Thickness of -1 will fill the entire shape
-    thickness = 3
+    thickness = -1
     img = cv2.rectangle(img, start_point, end_point, color, thickness)
     return img
 
@@ -74,7 +74,7 @@ def strip_non_greek_word_image_zones(treeIn,img):
                 else:
                     print("spared due to proximity to Greek")
                 continue
-            img = delete_span(word_triplet[1],img)
+            img = delete_span(word_triplet[1],img, broaden=5)
     #process last
     return img
 
@@ -132,12 +132,21 @@ for root, dirs, files in os.walk(args.hocrInputDir):
             #img = cv2.imread(os.path.join(args.imageInputDir,img_filename))
             with open(os.path.join(args.hocrInputDir,file_name)) as file: # Use file to refer to the file
                 try:
-                    img_in = cv2.imread(os.path.join(args.imageInputDir,img_filename))
+                    img_in = cv2.imread(os.path.join(args.imageInputDir,img_filename), cv2.IMREAD_UNCHANGED)
                     tree = etree.parse(file)
                     find_xhtml_body = etree.ETXPath("//{%s}body" % XHTML_NAMESPACE)
                     results = find_xhtml_body(tree)
                     xhtml = transform_to_xhtml(tree)
                     img_out = strip_non_greek_word_image_zones(xhtml,img_in)
+                    #make mask of where the transparent bits are
+                    #trans_mask = img_out[:,:,3] == 0
+
+                    #replace areas of transparency with white and not transparent
+                    #img_out[trans_mask] = [255, 255, 255, 255]
+
+                    #new image without alpha channel...
+                    #new_img = cv2.cvtColor(img_out, cv2.COLOR_BGRA2BGR)
+
                     #xhtml.write(os.path.join(args.outputDir,file_name),pretty_print=True, xml_declaration=True,   encoding="utf-8")
                     # Load the image
                     #src = cv2.imread(argv[1], 0)
