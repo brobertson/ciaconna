@@ -289,7 +289,7 @@ shopt -s extglob
         python2 $CIACONNA_HOME/bin/Python/dehyphenate.py $HOCR_OUTPUT_DIR $HOCR_DEHYPHENATED_DIR
         echo "generating spellcheck file"
         #now create spellchecked forms
-        python2 $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE /home/brucerob/unique_no_accent_list.csv > $SPELLCHECK_CSV
+        python2 $CIACONNA_HOME/bin/Python/generate_spellcheck_file_from_dehyphenated_hocr.py $HOCR_DEHYPHENATED_DIR $DICTIONARY_FILE $CIACONNA_HOME/Dictionaries/greek_unique_no_accent_list.csv > $SPELLCHECK_CSV
         echo "creating spellchecked version"
         python2 $CIACONNA_HOME/bin/Python/spellcheck_hocr.py $SPELLCHECK_CSV  $HOCR_DEHYPHENATED_DIR $SELECTED_DIR
 
