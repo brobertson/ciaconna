@@ -123,7 +123,9 @@ dict = set(dict)
 no_accent_dict = makeNoAccentDict(sys.argv[3])
 print "# dict building took", minutes, " minutes."
 marker=u"€"
-
+#compile a regex for greek numerals, comprising 1-2 of the common number letters, either lc or 
+#uc and a prime symbol. This must be the entire word.
+greek_numeral_re = re.compile(u'[αβγδεϚϜξιηθικλμνοπϞϘρστυφχψωϠΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ]{1,2}′$')
 word_count = {}
 
 for file_name in dir_in_list:
@@ -206,6 +208,17 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             digit_groups = re.match(u'(^[·«„\[\("〈]*)([I\d' + superscripts + u']*?)([«»„.,!?;†·:〉\)\]' + u']*$)',w,re.UNICODE).groups()
             output = digit_groups[0] + re.sub('I','1',digit_groups[1]) + digit_groups[2]
             operation = "Numerical"
+        except:
+            pass
+
+    #check for greek numerals
+    if operation=="False":
+        try:
+            #replace all modifier primes with prime symbol
+            test_word = w.replace(u'ʹ',u'′')
+            if (greek_numeral_re.match(test_word)):
+                operation = "Numerical"
+                output = test_word
         except:
             pass
     for a_suffix in latin_suffixes:
@@ -291,6 +304,7 @@ for w in sorted(word_count, key=word_count.get, reverse=True):
             [u'ρ',[u'ῥ',u'p']],
             [u'ς',[u's']],
             [u'σ',[u'κ']],
+            [u'ϲ',[u'ς']],
             [u'τ',[u'r',u'x']],
              [u'φ',[u'ρ']],
             [u't',[u'λ',u'ι',u'ῖ',u'ἰ',u'ἱ',u'ί']],
